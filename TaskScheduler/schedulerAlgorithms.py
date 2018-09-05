@@ -5,10 +5,10 @@ import pytz
 def roundToNearestHour(time, *args):
 	if time.minute > 0 and time.minute <= 30:
 		time -= timezone.timedelta(minutes=time.minute, seconds=time.second)
-		time.replace(minute=30, microsecond=0)
+		time = time.replace(minute=30, microsecond=0)
 	else:
 		time -= timezone.timedelta(hours=-1, minutes=time.minute, seconds=time.second)
-		time.replace(minute=0, microsecond=0)
+		time = time.replace(minute=0, microsecond=0)
 	return time
 
 def isFreeFor(current_time, task, blocked_list, *args):	# blocked_list is sorted in ascending order
@@ -28,7 +28,7 @@ def isFreeFor(current_time, task, blocked_list, *args):	# blocked_list is sorted
 	for i in range(0, len(blocked_list)-1):
 		if current_time >= blocked_list[i].end_time and current_time < blocked_list[i+1].start_time:
 			# print("Flag 5.2")
-			is_free_for = (blocked_list[i+1].start_time - blocked_list[i].end_time).total_seconds()/60
+			is_free_for = (blocked_list[i+1].start_time - current_time).total_seconds()/60
 			blocked_till = None
 			break
 		if current_time >= blocked_list[i].start_time and current_time < blocked_list[i].end_time:
@@ -58,7 +58,7 @@ def scheduleTasks(task_list, blocked_list, *args):	# task_list is assumed to be 
 	done = [False for x in range(0, len(task_list))]
 	done_task_list = [None]*len(task_list)
 	while False in done:
-		print(done)
+		# print(done)
 		task_index = 0
 		for task in task_list:
 			if not done[task_index]:
@@ -75,25 +75,25 @@ def scheduleTasks(task_list, blocked_list, *args):	# task_list is assumed to be 
 						# print("Hack 1")
 						task.left -= task.at_a_stretch
 						schedule.append(Schedule(task=task, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=task.at_a_stretch)))
-						current_time = current_time+timezone.timedelta(minutes=task.at_a_stretch)
+						current_time = current_time + timezone.timedelta(minutes=task.at_a_stretch)
 					else:
 						# print("Hack 2")
 						task.done = True
 						done[task_index] = True
 						schedule.append(Schedule(task=task, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=task.left)))
-						current_time = current_time+timezone.timedelta(minutes=task.left)
+						current_time = current_time + timezone.timedelta(minutes=task.left)
 						task.left = 0
 				else:
 					if is_free_for > task.at_a_stretch:
 						# print("Hack 3")
-						task.left -= is_free_for
+						task.left -= task.at_a_stretch
 						schedule.append(Schedule(task=task, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=task.at_a_stretch)))
-						current_time = current_time+timezone.timedelta(minutes=task.at_a_stretch)
+						current_time = current_time + timezone.timedelta(minutes=task.at_a_stretch)
 					else:
 						# print("Hack 4")
+						task.left -= is_free_for
 						schedule.append(Schedule(task=task, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=is_free_for)))
-						current_time = current_time+timezone.timedelta(minutes=is_free_for)
-						task.left = 0
+						current_time = current_time + timezone.timedelta(minutes=is_free_for)
 
 			done_task_list[task_index] = task
 			task_index += 1

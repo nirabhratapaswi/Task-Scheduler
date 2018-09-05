@@ -25,7 +25,7 @@ class Schedule(models.Model):
 
 class Blocked(models.Model):
 	def __str__(self):
-		return self.name + " (" + str(self.priority) + ")"
+		return self.name
 	name = models.CharField(max_length=200, default=None)
 	start_time = models.DateTimeField(default=timezone.now())
 	end_time = models.DateTimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)))
