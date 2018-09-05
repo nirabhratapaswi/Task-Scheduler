@@ -6,11 +6,11 @@ import datetime
 
 class Task(models.Model):
 	def __str__(self):
-		return self.task_name + " (" + str(self.priority) + ")"
+		return self.name + " (" + str(self.priority) + ")"
 
 	choices = (("0", "Low"), ("1", "Medium"), ("2", "High"))
 
-	task_name = models.CharField(max_length=200)
+	name = models.CharField(max_length=200)
 	priority = models.CharField(max_length=10, default="0", choices=choices)	# 0->low 1-> medium 2-> high
 	span = models.IntegerField(default=60)
 	deadline = models.DateTimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)))
@@ -24,5 +24,8 @@ class Schedule(models.Model):
 	end_time = models.DateTimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)))
 
 class Blocked(models.Model):
+	def __str__(self):
+		return self.name + " (" + str(self.priority) + ")"
+	name = models.CharField(max_length=200, default=None)
 	start_time = models.DateTimeField(default=timezone.now())
 	end_time = models.DateTimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)))
