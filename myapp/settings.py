@@ -31,7 +31,6 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 # Application definition
 
 INSTALLED_APPS = [
-    'polls.apps.PollsConfig',
     'TaskScheduler.apps.TaskschedulerConfig',
     'django.contrib.admin',
     'django.contrib.auth',
