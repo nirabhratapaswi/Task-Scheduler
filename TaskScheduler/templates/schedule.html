@@ -5,10 +5,10 @@
 	<a href="/taskscheduler/schedule">Schedule</a>
 <div>
 
-<form method="post" novalidate>
-    {% csrf_token %}
-    <table>
-    	{{ form.as_table }}
-	</table>
-    <input type="submit" value="Submit">
-</form>
+{% for s in schedule %}
+	<h3>{{ s.task.name }}</h3>
+	<ul>
+		<li>Start: {{ s.start_time }}</li>
+		<li>End: {{ s.end_time }}</li>
+	</ul>
+{% endfor %}

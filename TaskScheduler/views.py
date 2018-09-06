@@ -26,9 +26,26 @@ def prioritySchedule(request):
 	for s in schedule:
 		i += 1
 		response += str(i) + ") Task name: " + s.task.name + ", start: " + str(s.start_time) + ", end: " + str(s.end_time) + "<br>"
+		s.save()
 		# print("Task name: " + s.task.name + ", duration: " + str((s.end_time - s.start_time).total_seconds()/60))
 
 	return HttpResponse(response)
+	# return render(request, 'schedule.html', {'schedule': schedule})
+
+def schedule(request):
+	tasks = crud.readUndoneTasks()
+	blocked = crud.readBlocked(timezone.now())
+	taskList = list()
+	for t in tasks:
+		taskList.append(t)
+
+	blockedList = list()
+	for b in blocked:
+		blockedList.append(b)
+
+	schedule = scAlgo.scheduleTasks(taskList, blockedList)
+
+	return render(request, 'schedule.html', {'schedule': schedule})
 
 def createTask(request):
 	if request.method == "POST":
@@ -38,7 +55,7 @@ def createTask(request):
 		data = form.cleaned_data
 		print(data["name"]+", "+str(data["priority"])+", "+str(data["span"])+", "+str(data["deadline"])+", "+str(data["at_a_stretch"]))
 		t = Task(name=data["name"], priority=data["priority"], span=data["span"], deadline=data["deadline"], at_a_stretch=data["at_a_stretch"], left=data["span"], done=False)
-		t.save()
+		# t.save()
 		return HttpResponse("Task created Successfully.")
 		# if form.is_valid():
 		# 	data = form.cleaned_data

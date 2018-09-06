@@ -1,4 +1,10 @@
 {% load static %}
+<div style="float: left">
+	<!-- <a href="/taskscheduler">Raw Schedule</a> -->
+	<a href="/taskscheduler/createtask">Create Task</a>
+	<a href="/taskscheduler/tasklist">View Tasks</a>
+	<a href="/taskscheduler/schedule">Schedule</a>
+<div>
 {% for t in tasks %}
 	<h3>{{ t.name }}</h3>
 	<ul>
