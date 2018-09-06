@@ -1,0 +1,54 @@
+{% load static %}
+{% for t in tasks %}
+	<h3>{{ t.name }}</h3>
+	<ul>
+		<li>id: {{ t.id }}</li>
+		<li>Priority: {{ t.priority }}</li>
+		<li>Total Span: {{ t.span }}</li>
+		<li>Deadline: {{ t.deadline }}</li>
+		<li>At a Stretch: {{ t.at_a_stretch }}</li>
+		<li>Left: {{ t.left }}</li>
+	</ul>
+	<button  id="{{t.id}}" class="deleteBtn">Delete</button><br>
+{% endfor %}
+
+
+<script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+{% block javascript %}
+  <script>
+  		function getCookie(name) {
+             var cookieValue = null;
+             if (document.cookie && document.cookie != '') {
+                 var cookies = document.cookie.split(';');
+                 for (var i = 0; i < cookies.length; i++) {
+                     var cookie = jQuery.trim(cookies[i]);
+                     // Does this cookie string begin with the name we want?
+                     if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                         cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                         break;
+                     }
+                 }
+             }
+             return cookieValue;
+         }
+  		$(document).on("click",".deleteBtn", function () {
+		    let id = $(this).attr('id');
+		    $.ajax({
+		        url: 'http://localhost:8000/tasksheduler/taskscheduler/deletetask',
+		        contentType: "application/x-www-form-urlencoded",
+		        type: "POST",
+		        headers: {
+		        	"X-CSRFToken": getCookie('csrftoken')
+		        },
+		        data: {
+		          "id": id
+		        },
+		        dataType: 'json',
+		        success: function (data) {
+		          console.log("Task deleted successfully.");
+		          location.reload();
+		        }
+		      });
+		});
+  </script>
+{% endblock %}

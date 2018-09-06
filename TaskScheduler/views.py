@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.utils import timezone
 from .models import Task, Blocked
@@ -6,6 +6,7 @@ from . import CRUD as crud
 from . import schedulerAlgorithms as scAlgo
 from .forms import TaskForm
 from django.utils.dateparse import parse_date
+import json
 
 # Create your views here.
 def prioritySchedule(request):
@@ -36,28 +37,38 @@ def createTask(request):
 		form.is_valid()
 		data = form.cleaned_data
 		print(data["name"]+", "+str(data["priority"])+", "+str(data["span"])+", "+str(data["deadline"])+", "+str(data["at_a_stretch"]))
+		t = Task(name=data["name"], priority=data["priority"], span=data["span"], deadline=data["deadline"], at_a_stretch=data["at_a_stretch"], left=data["span"], done=False)
+		t.save()
+		return HttpResponse("Task created Successfully.")
 		# if form.is_valid():
 		# 	data = form.cleaned_data
 		# 	print(data["name"]+", "+str(data["priority"])+", "+str(data["span"])+", "+str(data["deadline"])+", "+str(data["at_a_stretch"]))
 	else:
 		print("Non post method called.")
-	# return HttpResponse("Task created Successfully.")
-	return render(request, 'task.html', {'form': TaskForm})
+		return render(request, 'createTask.html', {'form': TaskForm})
 
-def get_task(request):
+def getTasks(request):
 	# if this is a POST request we need to process the form data
-	if request.method == 'POST':
-		# create a form instance and populate it with data from the request:
-		form = NameForm(request.POST)
-		# check whether it's valid:
-		if form.is_valid():
-			# process the data in form.cleaned_data as required
-			# ...
-			# redirect to a new URL:
-			return HttpResponseRedirect('/thanks/')
+	tasks = Task.objects.all()
+	for t in tasks:
+		print("Task Name: " + t.name)
+	return render(request, 'taskList.html', {'tasks': tasks})
 
-	# if a GET (or any other method) we'll create a blank form
+def deleteTask(request):
+	# if this is a POST request we need to process the form data
+	if request.method == "POST":
+		print("Post method called.")
+		form = TaskForm(request.POST)
+		form.is_valid()
+		data = request.POST
+		print("Id: " + data["id"])
+		t = Task.objects.filter(pk=data["id"])
+		t.delete()
+		return HttpResponse(json.dumps({"msg": "Task deleted Successfully."}), content_type="application/json")
+		# if form.is_valid():
+		# 	data = form.cleaned_data
+		# 	print(data["name"]+", "+str(data["priority"])+", "+str(data["span"])+", "+str(data["deadline"])+", "+str(data["at_a_stretch"]))
 	else:
-		form = NameForm()
+		print("Non post method called.")
+		return HttpResponse("Non POST methods not supported.")
 
-	return render(request, 'name.html', {'form': form})
