@@ -6,17 +6,14 @@
 	<a href="/taskscheduler/createblocked">Create Blocked</a>
 	<a href="/taskscheduler/blockedlist">View Blocked</a>
 <div>
-{% for t in tasks %}
-	<h3>{{ t.name }}</h3>
+{% for b in blocked %}
+	<h3>{{ b.name }}</h3>
 	<ul>
-		<li>id: {{ t.id }}</li>
-		<li>Priority: {{ t.priority }}</li>
-		<li>Total Span: {{ t.span }}</li>
-		<li>Deadline: {{ t.deadline }}</li>
-		<li>At a Stretch: {{ t.at_a_stretch }}</li>
-		<li>Left: {{ t.left }}</li>
+		<li>id: {{ b.id }}</li>
+		<li>Start Time: {{ b.start_time }}</li>
+		<li>End Time: {{ b.end_time }}</li>
 	</ul>
-	<button  id="{{t.id}}" class="deleteBtn">Delete</button><br>
+	<button  id="{{b.id}}" class="deleteBtn">Delete</button><br>
 {% endfor %}
 
 
@@ -41,7 +38,7 @@
   		$(document).on("click",".deleteBtn", function () {
 		    let id = $(this).attr('id');
 		    $.ajax({
-		        url: 'http://localhost:8000/tasksheduler/taskscheduler/deletetask',
+		        url: 'http://localhost:8000/tasksheduler/taskscheduler/deleteblocked',
 		        contentType: "application/x-www-form-urlencoded",
 		        type: "POST",
 		        headers: {
@@ -52,7 +49,7 @@
 		        },
 		        dataType: 'json',
 		        success: function (data) {
-		          console.log("Task deleted successfully.");
+		          console.log("Blocked deleted successfully.");
 		          location.reload();
 		        }
 		      });

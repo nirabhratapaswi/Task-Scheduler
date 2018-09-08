@@ -33,7 +33,8 @@ Blocked(name="class", start_time=pytz.timezone('UTC').localize(parse_datetime("2
 
 # Test
 from TaskScheduler.models import Task, Schedule, Blocked
-from TaskScheduler.schedulerAlgorithms import *
+# from TaskScheduler.schedulerAlgorithms import *
+from TaskScheduler.SlackRoundRobinScheduler import *
 from django.utils import *
 import pytz
 from django.utils.dateparse import parse_datetime
@@ -59,8 +60,48 @@ blockedList = list()
 for b in Blocked.objects.all():
 	blockedList.append(b)
 
-schedule = scheduleTasks(taskList, blockedList)
+# schedule = scheduleTasks(taskList, blockedList)
+current_time = timezone.now()
+schedule = scheduleTasks(taskList, current_time, blockedList)
 
 for s in schedule:
 	print("Task name: " + s.task.name + ", start: " + str(s.start_time) + ", end: " + str(s.end_time))
 	# print("Task name: " + s.task.name + ", duration: " + str((s.end_time - s.start_time).total_seconds()/60))
+
+# Test specifically for Handling Hard Deadlines
+from TaskScheduler.models import Task, Schedule, Blocked
+# from TaskScheduler.schedulerAlgorithms import *
+from TaskScheduler.SlackRoundRobinScheduler import *
+from django.utils import *
+import pytz
+from django.utils.dateparse import parse_datetime
+
+for t in Task.objects.all():
+	t.delete()
+
+for b in Blocked.objects.all():
+	b.delete()
+
+now = roundToNearestHour(timezone.now())
+Task.objects.create(name="codechef", priority="2", span=60*4, deadline=now+timezone.timedelta(minutes=60*7), at_a_stretch=60, left=60*4, done=False)
+Task.objects.create(name="badminton", priority="1", span=60*5, deadline=now+timezone.timedelta(minutes=60*13), at_a_stretch=60, left=60*5, done=False)
+Task.objects.create(name="transport phenomena", priority="0", span=60*5, deadline=now+timezone.timedelta(minutes=60*100), at_a_stretch=60, left=60*5, done=False)
+Blocked.objects.create(name="class", start_time=now+timezone.timedelta(minutes=60*4), end_time=now+timezone.timedelta(minutes=60*5))
+Blocked.objects.create(name="sleep", start_time=now+timezone.timedelta(minutes=60*12), end_time=now+timezone.timedelta(minutes=60*13+30))
+
+taskList = list()
+for t in Task.objects.all():
+	taskList.append(t)
+
+blockedList = list()
+for b in Blocked.objects.all():
+	blockedList.append(b)
+
+# schedule = scheduleTasks(taskList, blockedList)
+current_time = now
+schedule = scheduleTasks(taskList, current_time, blockedList)
+
+for s in schedule:
+	print("Task name: " + s.task.name + ", start: " + str(s.start_time) + ", end: " + str(s.end_time))
+	# print("Task name: " + s.task.name + ", duration: " + str((s.end_time - s.start_time).total_seconds()/60))
+

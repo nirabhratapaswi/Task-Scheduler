@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from .models import Task, Schedule, Blocked
 from .schedulerAlgorithms import roundToNearestHour, scheduleTasks
+from . import SlackRoundRobinScheduler as SRRS
 from django.utils import timezone
 import pytz
 
@@ -16,7 +17,6 @@ class ScheduleTests(TestCase):
 		Blocked.objects.create(name="sleep", start_time=self.now+timezone.timedelta(minutes=60*6+45), end_time=self.now+timezone.timedelta(minutes=60*7+45))
 
 	def testScheduledCorrectly(self):
-		print('Flag 3')
 		taskList = list()
 		for t in Task.objects.all():
 			taskList.append(t)
@@ -83,7 +83,90 @@ class ScheduleTests(TestCase):
 			# print("Task name: " + s.task.name + ", duration: " + str((s.end_time - s.start_time).total_seconds()/60))
 			i += 1
 
-		self.assertEqual(True, True)
-
 	def tearDown(self):
 		print("Finishing testing the Scheduling...")
+
+
+class SlackScheduleTests(TestCase):
+	def setUp(self):
+		for t in Task.objects.all():
+			t.delete()
+		for b in Blocked.objects.all():
+			b.delete()
+		self.now = SRRS.roundToNearestHour(timezone.now())
+		print("Time now: " + str(self.now))
+		Task.objects.create(name="codechef", priority="2", span=60*4, deadline=self.now+timezone.timedelta(minutes=60*7), at_a_stretch=60, left=60*4, done=False)
+		Task.objects.create(name="badminton", priority="1", span=60*5, deadline=self.now+timezone.timedelta(minutes=60*13), at_a_stretch=60, left=60*5, done=False)
+		Task.objects.create(name="transport phenomena", priority="0", span=60*5, deadline=self.now+timezone.timedelta(minutes=60*100), at_a_stretch=60, left=60*5, done=False)
+		Blocked.objects.create(name="class", start_time=self.now+timezone.timedelta(minutes=60*4), end_time=self.now+timezone.timedelta(minutes=60*5))
+		Blocked.objects.create(name="sleep", start_time=self.now+timezone.timedelta(minutes=60*12), end_time=self.now+timezone.timedelta(minutes=60*13+30))
+
+	def testSlackScheduledCorrectly(self):
+		taskList = list()
+		for t in Task.objects.all():
+			taskList.append(t)
+
+		blockedList = list()
+		for b in Blocked.objects.all():
+			blockedList.append(b)
+
+		schedule = SRRS.scheduleTasks(taskList, self.now, blockedList)
+		timedelta_dict = [{
+			'name': "codechef",
+			'start': self.now,
+			'end': self.now + timezone.timedelta(minutes=60*1)
+		}, {
+			'name': "badminton",
+			'start': self.now + timezone.timedelta(minutes=60*1),
+			'end': self.now + timezone.timedelta(minutes=60*2)
+		}, {
+			'name': "transport phenomena",
+			'start': self.now + timezone.timedelta(minutes=60*2),
+			'end': self.now + timezone.timedelta(minutes=60*3)
+		}, {
+			'name': "codechef",
+			'start': self.now + timezone.timedelta(minutes=60*3),
+			'end': self.now + timezone.timedelta(minutes=60*4)
+		}, {
+			'name': "codechef",
+			'start': self.now + timezone.timedelta(minutes=60*5),
+			'end': self.now + timezone.timedelta(minutes=60*7)
+		}, {
+			'name': "badminton",
+			'start': self.now + timezone.timedelta(minutes=60*7),
+			'end': self.now + timezone.timedelta(minutes=60*8)
+		}, {
+			'name': "transport phenomena",
+			'start': self.now + timezone.timedelta(minutes=60*8),
+			'end': self.now + timezone.timedelta(minutes=60*9)
+		}, {
+			'name': "badminton",
+			'start': self.now + timezone.timedelta(minutes=60*9),
+			'end': self.now + timezone.timedelta(minutes=60*12)
+		}, {
+			'name': "transport phenomena",
+			'start': self.now + timezone.timedelta(minutes=60*13+30),
+			'end': self.now + timezone.timedelta(minutes=60*14+30)
+		}, {
+			'name': "transport phenomena",
+			'start': self.now + timezone.timedelta(minutes=60*14+30),
+			'end': self.now + timezone.timedelta(minutes=60*15+30)
+		}, {
+			'name': "transport phenomena",
+			'start': self.now + timezone.timedelta(minutes=60*15+30),
+			'end': self.now + timezone.timedelta(minutes=60*16+30)
+		}]
+		# schedule_test = [Schedule(task=Task.objects.get(name=codechef), start_time=self.now()+timezone.timedelta(), end_time=)]
+
+		i = 0
+		for s in schedule:
+			print("Task name: " + s.task.name + ", start: " + str(s.start_time) + ", end: " + str(s.end_time))
+			self.assertEqual(s.task.name, timedelta_dict[i]["name"])
+			self.assertEqual(s.start_time, timedelta_dict[i]["start"])
+			self.assertEqual(s.end_time, timedelta_dict[i]["end"])
+			# print("Timedelta: start time: " + str(timedelta_dict[i]["start"]) + ", end: " + str(timedelta_dict[i]["end"]))
+			# print("Task name: " + s.task.name + ", duration: " + str((s.end_time - s.start_time).total_seconds()/60))
+			i += 1
+
+	def tearDown(self):
+		print("Finishing testing the Slack Scheduling...")
