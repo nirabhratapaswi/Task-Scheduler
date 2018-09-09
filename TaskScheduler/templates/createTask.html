@@ -10,6 +10,10 @@
     {% csrf_token %}
     <table>
     	{{ form.as_table }}
+    	<tr>
+			<th><label for="id_deadline">Deadline:</label></th>
+			<td><input type="datetime-local" name="deadline" required id="id_deadline" /></td>
+		</tr>
 	</table>
     <input type="submit" value="Submit">
 </form>

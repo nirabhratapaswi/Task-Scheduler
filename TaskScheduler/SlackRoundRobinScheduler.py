@@ -57,6 +57,8 @@ def removeDoneTasks(task_list, done_task_list, *args):
 def scheduleTasks(task_list, current_time, blocked_list, *args):
 	if len(task_list)==0:
 		return None;
+	for s in Schedule.objects.all():
+		s.delete()
 	schedule = list()
 	done_task_list = list()
 	# current_time = roundToNearestHour(current_time)	# check necessity if already called from parent function
@@ -78,6 +80,8 @@ def scheduleTasks(task_list, current_time, blocked_list, *args):
 							schedule.append(Schedule(task=slack_check_task, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=slack_check_task.left)))
 							current_time += timezone.timedelta(minutes=slack_check_task.left)
 							slack_check_task.left = 0
+							slack_check_task.done = True
+							# slack_check_task.save()
 						else:
 							# print("Appending Schedule at 2")
 							schedule.append(Schedule(task=slack_check_task, start_time=current_time, end_time=blocked_list[0].start_time))
@@ -92,6 +96,8 @@ def scheduleTasks(task_list, current_time, blocked_list, *args):
 					schedule.append(Schedule(task=slack_check_task, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=slack_check_task.left)))
 					current_time += timezone.timedelta(minutes=slack_check_task.left)
 					slack_check_task.left = 0
+					slack_check_task.done = True
+					# slack_check_task.save()
 			continue
 		else:
 			task_list.insert(0, slack_check_task)	# if slack validity holds good, reinsert the task at inspection
@@ -108,6 +114,8 @@ def scheduleTasks(task_list, current_time, blocked_list, *args):
 								schedule.append(Schedule(task=t, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=time_quantum)))
 								current_time += timezone.timedelta(minutes=time_quantum)
 								time_quantum = 0
+								t.done = True
+								# t.save()
 							else:
 								# print("Appending Schedule at 5")
 								schedule.append(Schedule(task=t, start_time=current_time, end_time=blocked_list[0].start_time))
@@ -122,10 +130,14 @@ def scheduleTasks(task_list, current_time, blocked_list, *args):
 						schedule.append(Schedule(task=t, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=time_quantum)))
 						current_time += timezone.timedelta(minutes=time_quantum)
 						time_quantum = 0
+						t.done = True
+						# t.save()
 				t.left -= t.at_a_stretch
 				task_list[index] = t
 				index += 1
 
 		[task_list, done_task_list] = removeDoneTasks(task_list, done_task_list)	# to remove Done Tasks
 
+	for s in schedule:
+		s.save()
 	return schedule

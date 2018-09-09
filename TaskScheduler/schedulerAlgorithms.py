@@ -52,6 +52,8 @@ def isFreeFor(current_time, task, blocked_list, *args):	# blocked_list is sorted
 def scheduleTasks(task_list, blocked_list, *args):	# task_list is assumed to be Sorted sequentially by some logic, blocked_list is sorted in ascending order
 	schedule = list()
 	current_time = timezone.now()
+	for s in Schedule.objects.all():
+		s.delete()
 	# pytz_obj.replace(tzinfo=pytz.timezone(pytz_zone))
 	# current_time = pytz.timezone(pytz_zone).localize(timezone.now(), is_dst=None)
 	current_time = roundToNearestHour(current_time)
