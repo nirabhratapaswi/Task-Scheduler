@@ -15,7 +15,7 @@ class Command(BaseCommand):
         for opt in options['option']:
             if opt == "all":
                 table_data = [
-                    ["id", "Task Name", "Priority", "Deadline(yyyy-mm-dd HH:MM:SS)", "Span", "Left", "Done"]
+                    ["id", "Task Name", "Span (minutes)", "Deadline(yyyy-mm-dd HH:MM:SS)", "Priority", "Left", "Done"]
                 ]
                 for t in Task.objects.all().order_by("deadline"):
                     # print("Task Name: " + t.name + ", Span: " + str(t.span) + ", Deadline: " + str(t.deadline), ", Priority: ", str(t.priority) + ", Done; " + str(t.done))
@@ -28,7 +28,7 @@ class Command(BaseCommand):
                 print (table.table)
             elif opt == "undone":
                 table_data = [
-                    ["id", "Task Name", "Priority", "Deadline(yyyy-mm-dd HH:MM:SS)", "Span", "Left", "Done"]
+                    ["id", "Task Name", "Span (minutes)", "Deadline(yyyy-mm-dd HH:MM:SS)", "Priority", "Left", "Done"]
                 ]
                 for t in Task.objects.all().filter(done=False):
                     # print("Task Name: " + t.name + ", Span: " + str(t.span) + ", Deadline: " + str(t.deadline), ", Priority: ", str(t.priority) + ", Done; " + str(t.done))
@@ -41,7 +41,7 @@ class Command(BaseCommand):
                 print (table.table)
             elif opt == "done":
                 table_data = [
-                    ["id", "Task Name", "Priority", "Deadline(yyyy-mm-dd HH:MM:SS)", "Span", "Left", "Done"]
+                    ["id", "Task Name", "Span (minutes)", "Deadline(yyyy-mm-dd HH:MM:SS)", "Priority", "Left", "Done"]
                 ]
                 for t in Task.objects.all().filter(done=True):
                     # print("Task Name: " + t.name + ", Span: " + str(t.span) + ", Deadline: " + str(t.deadline), ", Priority: ", str(t.priority) + ", Done; " + str(t.done))
@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 print (table.table)
             elif opt == "priority":
                 table_data = [
-                    ["id", "Task Name", "Priority", "Deadline(yyyy-mm-dd HH:MM:SS)", "Span", "Left", "Done"]
+                    ["id", "Task Name", "Span (minutes)", "Deadline(yyyy-mm-dd HH:MM:SS)", "Priority", "Left", "Done"]
                 ]
                 for t in Task.objects.all().order_by("-priority"):
                     # print("Task Name: " + t.name + ", Span: " + str(t.span) + ", Deadline: " + str(t.deadline), ", Priority: ", str(t.priority) + ", Done; " + str(t.done))
@@ -67,7 +67,7 @@ class Command(BaseCommand):
                 print (table.table)
             elif opt == "deadlineover":
                 table_data = [
-                    ["id", "Task Name", "Priority", "Deadline(yyyy-mm-dd HH:MM:SS)", "Span", "Left", "Done"]
+                    ["id", "Task Name", "Span (minutes)", "Deadline(yyyy-mm-dd HH:MM:SS)", "Priority", "Left", "Done"]
                 ]
                 now = timezone.now()
                 print("Time now: " + str(now))
