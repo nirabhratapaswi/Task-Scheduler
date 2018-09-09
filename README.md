@@ -69,8 +69,12 @@ $ python manage.py <major_command> <sub_command_specification>
 **major_commands** include patterns like add, delete and schedule. **sub_command_specification** is passed along with *major_command* to specify the type of listing or operation to be done. Usage combinations:
 * addTask
 * deleteTasks
+    - id <actual integer>
+    - name <actual string>
 * addBlocked
 * deleteBlocked
+    - id <actual integer>
+    - name <actual string>
 * listTasks
     - all
     - done
