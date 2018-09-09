@@ -18,6 +18,6 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
-	url('taskscheduler', include('TaskScheduler.urls')),
+	url('taskscheduler/', include('TaskScheduler.urls')),
     url(r'^admin/', admin.site.urls),
 ]

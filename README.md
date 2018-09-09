@@ -5,7 +5,7 @@ Task-Scheduler is a lightweight application built to auto-schedule your daily/we
   - built with **django** and **mysql**
   - no external dependencies
   - **Api** extensions available
-  - **CLI** for terminal lovers:) (*coming soon*)
+  - **CLI** for terminal lovers:)
 
 ### Installation
 
@@ -56,7 +56,31 @@ Continuing in shell
 $ python3 manage.py runserver
 ```
 
+### Using the GUI (to be updated soon)
+
 Go to http://localhost:8000/taskscheduler and enjoy:)
+
+### Command Line Interface (CLI)
+
+Whilst in the project directory, there will be various command in the format
+```sh
+$ python manage.py <major_command> <sub_command_specification>
+```
+**major_commands** include patterns like add, delete and schedule. **sub_command_specification** is passed along with *major_command* to specify the type of listing or operation to be done. Usage combinations:
+* addTask
+* deleteTasks
+* addBlocked
+* deleteBlocked
+* listTasks
+    - all
+    - done
+    - undone
+    - priority
+    - deadlineover
+* listBlocked
+    - all
+    - left
+* schedule
 
 ### Docker (*coming soon*)
 Task-Scheduler is very easy to install and deploy in a Docker container.

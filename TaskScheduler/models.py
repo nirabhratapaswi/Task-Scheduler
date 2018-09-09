@@ -20,12 +20,12 @@ class Task(models.Model):
 
 class Schedule(models.Model):
 	task = models.ForeignKey(Task, on_delete=models.CASCADE)
-	start_time = models.DateTimeField(default=timezone.now())
+	start_time = models.DateTimeField(default=timezone.now()+timezone.timedelta(minutes=60))
 	end_time = models.DateTimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)))
 
 class Blocked(models.Model):
 	def __str__(self):
 		return self.name
 	name = models.CharField(max_length=200, default=None)
-	start_time = models.DateTimeField(default=timezone.now())
+	start_time = models.DateTimeField(default=timezone.now()+timezone.timedelta(minutes=60))
 	end_time = models.DateTimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)))
