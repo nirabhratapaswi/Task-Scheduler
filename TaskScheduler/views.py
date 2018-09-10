@@ -41,10 +41,6 @@ def schedule(request):
 	tasks = crud.readUndoneTasks()
 	blocked = crud.readBlocked(timezone.now())
 	weekly_schedule = crud.getWeeklySchedulePerDayAsList()
-	# print("Testing weekly_schedule:")
-	# for x in weekly_schedule:
-	# 	for y in x:
-	# 		print(y)
 	taskList = list()
 	for t in tasks:
 		taskList.append(t)

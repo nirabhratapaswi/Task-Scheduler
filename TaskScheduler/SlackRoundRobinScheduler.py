@@ -17,6 +17,9 @@ def roundToNearestHour(time, *args):
 		time = time.replace(minute=0, microsecond=0)
 	return time
 
+def alphabeticalSortFunctionWrtName(task):
+	return task.name
+
 def dateSortFunctionWrtPriority(task):
 	return task.priority
 
@@ -24,21 +27,29 @@ def dateSortFunctionWrtDeadline(task):
 	return task.deadline
 
 def findSlackTime(task, blocked_list, current_time, *args):
+	# print("For Slack Time, blocked_list: ")
+	# for b in blocked_list:
+	# 	print("Blocked Name:" + b.name + ", start_time" + str(b.start_time) + ", end_time: " + str(b.end_time))
 	slack_task = None
 	available_time_till_deadline = (task.deadline - current_time).total_seconds()/60
+	# print("Task deadline: " + str(task.deadline) + ", available_time_initial: " + str(available_time_till_deadline))
 	for b in blocked_list:
 		if b.start_time >= current_time and b.end_time <= task.deadline:
+			# print("Condition 0, name: " + b.name, ", substration: " + str((b.end_time - b.start_time).total_seconds()/60))
 			available_time_till_deadline -= (b.end_time - b.start_time).total_seconds()/60
 		elif b.start_time <= task.deadline and b.end_time > task.deadline:
+			# print("Condition 1, name: " + b.name, ", substration: " + str((task.deadline - b.start_time).total_seconds()/60))
 			available_time_till_deadline -= (task.deadline - b.start_time).total_seconds()/60
 
 	return available_time_till_deadline - task.left
 
-def timeQuantumSummation(task_list, *args):
+def timeQuantumSummation(task_list, priority, *args):
 	tq_sum = 0
 	for t in task_list:
+		# if priority <= t.priority:	# modify to reschedule deadline approaching tasks
 		tq_sum += t.at_a_stretch
 
+	# print("timeQuantumSummation: " + str(tq_sum))
 	return tq_sum
 
 def removeBlockedTask(current_time, blocked_list, *args):
@@ -60,22 +71,28 @@ def addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_
 	new_blocked_list = list()
 	todays_schedule = weekly_schedule_list[(current_time.weekday()+increment_day)%7]
 	for schedule in todays_schedule:
-		start_time = datetime.combine(date(current_time.year, current_time.month, current_time.day), schedule.weekly_schedule.start_time).replace(tzinfo=pytz.UTC) + timezone.timedelta(days=increment_day)
-		end_time = datetime.combine(date(current_time.year, current_time.month, current_time.day), schedule.weekly_schedule.end_time).replace(tzinfo=pytz.UTC) + timezone.timedelta(days=increment_day)
+		if increment_day == 0 and current_time.time() >= schedule.weekly_schedule.start_time and current_time.time() < schedule.weekly_schedule.end_time:
+			start_time = current_time + timezone.timedelta(days=increment_day)
+			end_time = datetime.combine(date(current_time.year, current_time.month, current_time.day), schedule.weekly_schedule.end_time).replace(tzinfo=pytz.UTC) + timezone.timedelta(days=increment_day)
+		elif current_time.time() < schedule.weekly_schedule.start_time or increment_day == 1:
+			start_time = datetime.combine(date(current_time.year, current_time.month, current_time.day), schedule.weekly_schedule.start_time).replace(tzinfo=pytz.UTC) + timezone.timedelta(days=increment_day)
+			end_time = datetime.combine(date(current_time.year, current_time.month, current_time.day), schedule.weekly_schedule.end_time).replace(tzinfo=pytz.UTC) + timezone.timedelta(days=increment_day)
+		else:
+			continue
 		blocked_instance = Blocked(name=schedule.weekly_schedule.name, start_time=start_time, end_time=end_time)
-		print("Blocked instance start time: " + str(blocked_instance.start_time) + ", end_time: " + str(blocked_instance.end_time))
+		# print("Blocked instance start time: " + str(blocked_instance.start_time) + ", end_time: " + str(blocked_instance.end_time))
 		schedule_added = False
 		while not schedule_added:
 			if len(blocked_list) > 0 and blocked_instance.start_time < blocked_list[0].start_time:
-				print("Flag 0")
+				# print("Flag 0")
 				new_blocked_list.append(blocked_instance)
 				schedule_added = True
 			elif len(blocked_list)==0:
-				print("Flag 1")
+				# print("Flag 1")
 				new_blocked_list.append(blocked_instance)
 				schedule_added = True
 			else:
-				print("Flag 2")
+				# print("Flag 2")
 				new_blocked_list.append(blocked_list[0])
 				blocked_list.pop(0)
 
@@ -93,7 +110,7 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *
 	# current_time = roundToNearestHour(current_time)	# check necessity if already called from parent function
 	blocked_list = addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_list, 0)
 	blocked_list = addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_list, 1)
-	current_date = current_time.date()
+	current_date = current_time.date() + timezone.timedelta(days=1)
 	while len(task_list) > 0:
 		# for s in schedule:
 			# print("Task name: " + s.task.name + ", start: " + str(s.start_time) + ", end: " + str(s.end_time))
@@ -104,9 +121,11 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *
 		task_list.sort(key=dateSortFunctionWrtDeadline)
 		slack_check_task = task_list[0]
 		slack_time = findSlackTime(slack_check_task, blocked_list, current_time)
-		task_list.pop(0)	# take out task with earliest deadline to check slack validity
-		# print("For task: " + slack_check_task.name + ", slack_time: " + str(slack_time))
-		if (slack_time < timeQuantumSummation(task_list)):
+		task_list.pop(0)	# take out task with earliest deadline to check slack validity -> commented to avoid check after task sort
+		print("For task: " + slack_check_task.name + ", slack_time: " + str(slack_time))
+		# task_list.sort(key=alphabeticalSortFunctionWrtName)
+		# task_list.sort(key=dateSortFunctionWrtPriority, reverse=True)	# for timeQuantumSummation to calculate time sum of only higher priorities
+		if (slack_time < timeQuantumSummation(task_list, slack_check_task.priority)):
 			while slack_check_task.left > 0:
 				if len(blocked_list) > 0:
 					if current_time < blocked_list[0].start_time:
