@@ -40,6 +40,11 @@ def prioritySchedule(request):
 def schedule(request):
 	tasks = crud.readUndoneTasks()
 	blocked = crud.readBlocked(timezone.now())
+	weekly_schedule = crud.getWeeklySchedulePerDayAsList()
+	# print("Testing weekly_schedule:")
+	# for x in weekly_schedule:
+	# 	for y in x:
+	# 		print(y)
 	taskList = list()
 	for t in tasks:
 		taskList.append(t)
@@ -54,7 +59,11 @@ def schedule(request):
 	current_time = SRRS.roundToNearestHour(tz.normalize(tz.localize(timezone.now().replace(tzinfo=None))).astimezone(pytz.timezone("Asia/Calcutta")).replace(tzinfo=pytz.UTC))
 	print("Current Time: " + str(current_time))
 	# current_time = pytz.timezone("Asia/Calcutta").localize(current_time.replace(tzinfo=None))
-	schedule = SRRS.scheduleTasks(taskList, current_time, blockedList)
+	schedule = SRRS.scheduleTasks(taskList, current_time, blockedList, weekly_schedule)
+
+	print("Schedule: ")
+	for s in schedule:
+		print("Task name: " + s.task.name + ", start: " + str(s.start_time) + ", end: " + str(s.end_time))
 
 	# index = 0
 	# for s in schedule:

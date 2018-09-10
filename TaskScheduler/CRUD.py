@@ -1,7 +1,7 @@
 from .models import Task, Schedule, Blocked, WeeklySchedule, DaysRepeated
 
 def createTask(name, priority, span, deadline, at_a_stretch, done, *args):
-	task = Task(name=name, priority=priority, span=span, at_a_stretch=at_a_stretch, left=span, done=done)
+	task = Task(name=name, priority=priority, span=span, deadline=deadline, at_a_stretch=at_a_stretch, left=span, done=done)
 	task.save()
 	return True	# TODO: write condition for saving and logical failured
 
@@ -15,7 +15,7 @@ def deleteTaskByName(name, *args):
 	task.delete()
 	return True
 
-def createBlocked(name, start_time, end_time, *args):
+def createBlocked(name, start_time, end_time, *args):	# check if slot is already booked!
 	blocked = Blocked(name=name, start_time=start_time, end_time=end_time)
 	blocked.save()
 	return True	# TODO: write condition for saving and logical failured
@@ -30,7 +30,7 @@ def deleteBlockedByName(name, *args):
 	blocked.delete()
 	return True
 
-def createWeeklySchedule(name, start_time, end_time, days_repeated, *args):
+def createWeeklySchedule(name, start_time, end_time, days_repeated, *args):	# check if slot is already booked!
 	weekly_schedule = WeeklySchedule(name=name, start_time=start_time, end_time=end_time)
 	weekly_schedule.save()
 	for d in days_repeated:
@@ -81,3 +81,10 @@ def readScheduleList(*args):
 		schedule_list.append(s)
 
 	return schedule_list
+
+def getWeeklySchedulePerDayAsList(*args):
+	weekly_schedule = list()
+	for day in range(0, 7):
+		weekly_schedule.append(DaysRepeated.objects.filter(day_index=day).order_by('weekly_schedule__start_time'))
+
+	return weekly_schedule

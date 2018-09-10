@@ -5,6 +5,8 @@
 
 from .models import Task, Schedule, Blocked
 from django.utils import timezone
+from datetime import datetime, date, time
+import pytz
 
 def roundToNearestHour(time, *args):
 	if time.minute > 0 and time.minute <= 30:
@@ -54,7 +56,34 @@ def removeDoneTasks(task_list, done_task_list, *args):
 
 	return [left_task_list, done_task_list]
 
-def scheduleTasks(task_list, current_time, blocked_list, *args):
+def addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_list, increment_day, *args):
+	new_blocked_list = list()
+	todays_schedule = weekly_schedule_list[(current_time.weekday()+increment_day)%7]
+	for schedule in todays_schedule:
+		start_time = datetime.combine(date(current_time.year, current_time.month, current_time.day), schedule.weekly_schedule.start_time).replace(tzinfo=pytz.UTC) + timezone.timedelta(days=increment_day)
+		end_time = datetime.combine(date(current_time.year, current_time.month, current_time.day), schedule.weekly_schedule.end_time).replace(tzinfo=pytz.UTC) + timezone.timedelta(days=increment_day)
+		blocked_instance = Blocked(name=schedule.weekly_schedule.name, start_time=start_time, end_time=end_time)
+		print("Blocked instance start time: " + str(blocked_instance.start_time) + ", end_time: " + str(blocked_instance.end_time))
+		schedule_added = False
+		while not schedule_added:
+			if len(blocked_list) > 0 and blocked_instance.start_time < blocked_list[0].start_time:
+				print("Flag 0")
+				new_blocked_list.append(blocked_instance)
+				schedule_added = True
+			elif len(blocked_list)==0:
+				print("Flag 1")
+				new_blocked_list.append(blocked_instance)
+				schedule_added = True
+			else:
+				print("Flag 2")
+				new_blocked_list.append(blocked_list[0])
+				blocked_list.pop(0)
+
+	for blocked in blocked_list:
+		new_blocked_list.append(blocked)
+	return new_blocked_list
+
+def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *args):	# assuming blocked list and weekly_schedule_list is sorted in ascending order, and there are no time conflicts between them
 	if len(task_list)==0:
 		return None;
 	for s in Schedule.objects.all():
@@ -62,9 +91,15 @@ def scheduleTasks(task_list, current_time, blocked_list, *args):
 	schedule = list()
 	done_task_list = list()
 	# current_time = roundToNearestHour(current_time)	# check necessity if already called from parent function
+	blocked_list = addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_list, 0)
+	blocked_list = addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_list, 1)
+	current_date = current_time.date()
 	while len(task_list) > 0:
 		# for s in schedule:
 			# print("Task name: " + s.task.name + ", start: " + str(s.start_time) + ", end: " + str(s.end_time))
+		if current_date != current_time.date() + timezone.timedelta(days=1):
+			blocked_list = addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_list, 1)
+			current_date = current_time.date()
 		blocked_list = removeBlockedTask(current_time, blocked_list)	# check if this call is absolutely necessary
 		task_list.sort(key=dateSortFunctionWrtDeadline)
 		slack_check_task = task_list[0]
