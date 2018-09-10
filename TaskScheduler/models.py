@@ -23,9 +23,21 @@ class Schedule(models.Model):
 	start_time = models.DateTimeField(default=timezone.now()+timezone.timedelta(minutes=60))
 	end_time = models.DateTimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)))
 
-class Blocked(models.Model):
+class Blocked(models.Model):	# Specially booked time slots
 	def __str__(self):
 		return self.name
 	name = models.CharField(max_length=200, default=None)
 	start_time = models.DateTimeField(default=timezone.now()+timezone.timedelta(minutes=60))
 	end_time = models.DateTimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)))
+
+class WeeklySchedule(models.Model):
+	def __str__(self):
+		return self.name
+	name = models.CharField(max_length=200)
+	start_time = models.TimeField(default=(timezone.now()+timezone.timedelta(minutes=60)).time())
+	end_time = models.TimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)).time())
+	# repeat_days = models.CharField(max_length=200)	# and array like ["Mon","Wed","Thu","Sun"] -> containing days of the week
+
+class DaysRepeated(models.Model):
+	weekly_schedule = models.ForeignKey(WeeklySchedule, on_delete=models.CASCADE)
+	day_index = models.IntegerField(default=0)

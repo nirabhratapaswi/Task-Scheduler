@@ -1,12 +1,12 @@
-from .models import Task, Schedule, Blocked
+from .models import Task, Schedule, Blocked, WeeklySchedule, DaysRepeated
 
 def createTask(name, priority, span, deadline, at_a_stretch, done, *args):
 	task = Task(name=name, priority=priority, span=span, at_a_stretch=at_a_stretch, left=span, done=done)
 	task.save()
 	return True	# TODO: write condition for saving and logical failured
 
-def deleteTaskById(taskId, *args):
-	task = Task.objects.get(pk=taskId)
+def deleteTaskById(task_id, *args):
+	task = Task.objects.get(pk=task_id)
 	task.delete()
 	return True
 
@@ -20,14 +20,37 @@ def createBlocked(name, start_time, end_time, *args):
 	blocked.save()
 	return True	# TODO: write condition for saving and logical failured
 
-def deleteBlockedById(blockedId, *args):
-	blocked = Blocked.objects.get(pk=blockedId)
+def deleteBlockedById(blocked_id, *args):
+	blocked = Blocked.objects.get(pk=blocked_id)
 	blocked.delete()
 	return True
 
 def deleteBlockedByName(name, *args):
 	blocked = Blocked.objects.get(name=name)
 	blocked.delete()
+	return True
+
+def createWeeklySchedule(name, start_time, end_time, days_repeated, *args):
+	weekly_schedule = WeeklySchedule(name=name, start_time=start_time, end_time=end_time)
+	weekly_schedule.save()
+	for d in days_repeated:
+		days_repeated = DaysRepeated(weekly_schedule=weekly_schedule, day_index=d)
+		days_repeated.save()
+	return True	# TODO: write condition for saving and logical failured
+
+def deleteWeeklyScheduleById(weekly_schedule_id, *args):
+	weekly_schedule = WeeklySchedule.objects.get(pk=weekly_schedule_id)
+	weekly_schedule.delete()
+	return True
+
+def createDaysRepeated(weekly_schedule, day_index, *args):
+	days_repeated = DaysRepeated(weekly_schedule=weekly_schedule, day_index=day_index)
+	days_repeated.save()
+	return True	# TODO: write condition for saving and logical failured
+
+def deleteDaysRepeatedById(days_repeated_id, *args):
+	days_repeated =	DaysRepeated.objects.get(pk=days_repeated_id)
+	days_repeated.delete()
 	return True
 
 def saveSchedule(schedule_list, *args):

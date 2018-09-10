@@ -12,4 +12,7 @@ urlpatterns = [
     path('createblocked', views.createBlocked, name='createblocked'),
     path('blockedlist', views.getBlocked, name='blockedlist'),
     path('deleteblocked', views.deleteBlocked, name='deleteblocked'),
+    path('createweeklyschedule', views.createWeeklySchedule, name='createweeklyschedule'),
+    path('weeklyschedulelist', views.getWeeklySchedule, name='weeklyschedulelist'),
+    path('deleteweeklyschedule', views.deleteWeeklySchedule, name='deleteweeklyschedule'),
 ]
