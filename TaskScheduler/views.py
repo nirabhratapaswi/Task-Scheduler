@@ -84,6 +84,9 @@ def createTask(request):
 		data["deadline"] = request.POST["deadline"]
 		data["at_a_stretch"] = request.POST["at_a_stretch"]
 		data["done"] = False
+		data["max_repeats_per_day"] = request.POST["max_repeats_per_day"]
+		data["times_repeated_today"] = 0
+		data["break_needed_afterwards"] = request.POST["break_needed_afterwards"]
 		print("Deadline before conversion:" + str(data["deadline"]))
 		aware_datetime = datetime.datetime.strptime(data["deadline"]+":00", "%Y-%m-%dT%H:%M:%S").replace(tzinfo=pytz.UTC)
 		# aware_datetime = datetime.datetime.strptime(data["deadline"]+":00", "%Y-%m-%dT%H:%M:%S").replace(tzinfo=calcutta)
@@ -94,7 +97,7 @@ def createTask(request):
 		print(data["name"]+", "+str(data["priority"])+", "+str(data["span"])+", "+str(data["deadline"])+", "+str(data["at_a_stretch"]))
 		# t = Task(name=data["name"], priority=data["priority"], span=data["span"], deadline=data["deadline"], at_a_stretch=data["at_a_stretch"], left=data["span"], done=False)
 		# t.save()
-		crud.createTask(name=data["name"], priority=data["priority"], span=data["span"], deadline=data["deadline"], at_a_stretch=data["at_a_stretch"], done=False)
+		crud.createTask(name=data["name"], priority=data["priority"], span=data["span"], deadline=data["deadline"], at_a_stretch=data["at_a_stretch"], done=False, max_repeats_per_day=data["max_repeats_per_day"], times_repeated_today=data["times_repeated_today"], break_needed_afterwards=data["break_needed_afterwards"])
 		return HttpResponse("Task created Successfully.")
 		# if form.is_valid():
 		# 	data = form.cleaned_data
@@ -170,13 +173,15 @@ def createWeeklySchedule(request):
 		data["name"] = request.POST["name"]
 		data["start_time"] = datetime.datetime.strptime(request.POST["start_time"]+":00.00000", "%H:%M:%S.%f").replace(tzinfo=pytz.UTC)
 		data["end_time"] = datetime.datetime.strptime(request.POST["end_time"]+":00.00000", "%H:%M:%S.%f").replace(tzinfo=pytz.UTC)
+		data["minimum_time_to_devote"] = request.POST["minimum_time_to_devote"]
+		data["hard_bound"] = request.POST["hard_bound"]
 		days_repeated = [int(x) for x in request.POST.getlist("daysrepeated")]
 		print("Days Repeated: ")
 		print(days_repeated)
 		print(data["name"]+", "+str(data["start_time"])+", "+str(data["end_time"]))
 		# w = WeeklySchedule(name=data["name"], start_time=data["start_time"], end_time=data["end_time"])
 		# w.save()
-		crud.createWeeklySchedule(name=data["name"], start_time=data["start_time"], end_time=data["end_time"], days_repeated=days_repeated)
+		crud.createWeeklySchedule(name=data["name"], start_time=data["start_time"], end_time=data["end_time"], days_repeated=days_repeated, minimum_time_to_devote=data["minimum_time_to_devote"], hard_bound=data["hard_bound"])
 		return HttpResponse("Weekly Schedule created Successfully.")
 	else:
 		return render(request, "createWeeklySchedule.html", {'form': Forms.WeeklyScheduleForm})

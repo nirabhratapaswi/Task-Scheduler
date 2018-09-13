@@ -17,7 +17,8 @@ class Task(models.Model):
 	at_a_stretch = models.IntegerField(default=60)	# how much time you need to do this task once started (in one sitting)
 	left = models.IntegerField(default=60)	# time left to complete the task
 	done = models.BooleanField(default=False)
-	max_repreats_per_day = models.IntegerField(default=4)
+	max_repeats_per_day = models.IntegerField(default=4)
+	times_repeated_today = models.IntegerField(default=0)
 	break_needed_afterwards = models.IntegerField(default=15)
 
 class Schedule(models.Model):
