@@ -67,10 +67,22 @@ def removeDoneTasks(task_list, done_task_list, *args):	# Note, this only removes
 
 	return [left_task_list, done_task_list]
 
+def filterHardSoftBoundWeeklyTasks(daily_schedule, *args):
+	hard_bound_schedule = list()
+	soft_bound_schedule = list()
+	for task in daily_schedule:
+		if task.weekly_schedule.hard_bound:
+			hard_bound_schedule.append(task)
+		else:
+			soft_bound_schedule.append(task)
+
+	return [hard_bound_schedule, soft_bound_schedule]
+
 def addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_list, increment_day, *args):
 	new_blocked_list = list()
-	todays_schedule = weekly_schedule_list[(current_time.weekday()+increment_day)%7]
-	for schedule in todays_schedule:
+	[hard_bound_schedule, soft_bound_schedule] = filterHardSoftBoundWeeklyTasks(weekly_schedule_list[(current_time.weekday()+increment_day)%7])
+	# hard_bound_schedule = weekly_schedule_list[(current_time.weekday()+increment_day)%7]
+	for schedule in hard_bound_schedule:
 		if increment_day == 0 and current_time.time() >= schedule.weekly_schedule.start_time and current_time.time() < schedule.weekly_schedule.end_time:
 			start_time = current_time + timezone.timedelta(days=increment_day)
 			end_time = datetime.combine(date(current_time.year, current_time.month, current_time.day), schedule.weekly_schedule.end_time).replace(tzinfo=pytz.UTC) + timezone.timedelta(days=increment_day)
@@ -80,7 +92,6 @@ def addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_
 		else:
 			continue
 		blocked_instance = Blocked(name=schedule.weekly_schedule.name, start_time=start_time, end_time=end_time)
-		# print("Blocked instance start time: " + str(blocked_instance.start_time) + ", end_time: " + str(blocked_instance.end_time))
 		schedule_added = False
 		while not schedule_added:
 			if len(blocked_list) > 0 and blocked_instance.start_time < blocked_list[0].start_time:
@@ -100,21 +111,21 @@ def addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_
 		new_blocked_list.append(blocked)
 	return new_blocked_list
 
-def completeDeadlineApproachingTask(current_time, task_to_check, blocked_list, schedule, *args):
-	while task_to_check.left > 0:
+def completeDeadlineApproachingTask(current_time, task, blocked_list, schedule, *args):
+	while task.left > 0:
 		if len(blocked_list) > 0:
 			if current_time < blocked_list[0].start_time:
-				if blocked_list[0].start_time - current_time >= timezone.timedelta(minutes=task_to_check.left):
+				if blocked_list[0].start_time - current_time >= timezone.timedelta(minutes=task.left):
 					# print("Appending Schedule at 1")
-					schedule.append(Schedule(task=task_to_check, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=task_to_check.left)))
-					current_time += timezone.timedelta(minutes=task_to_check.left)
-					task_to_check.left = 0
-					task_to_check.done = True
-					# task_to_check.save()
+					schedule.append(Schedule(task=task, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=task.left)))
+					current_time += timezone.timedelta(minutes=task.left)
+					task.left = 0
+					task.done = True
+					# task.save()
 				else:
 					# print("Appending Schedule at 2")
-					schedule.append(Schedule(task=task_to_check, start_time=current_time, end_time=blocked_list[0].start_time))
-					task_to_check.left -= (blocked_list[0].start_time - current_time).total_seconds()/60
+					schedule.append(Schedule(task=task, start_time=current_time, end_time=blocked_list[0].start_time))
+					task.left -= (blocked_list[0].start_time - current_time).total_seconds()/60
 					current_time = blocked_list[0].end_time
 					blocked_list = removeBlockedTask(current_time, blocked_list)
 			else:
@@ -122,11 +133,12 @@ def completeDeadlineApproachingTask(current_time, task_to_check, blocked_list, s
 				blocked_list = removeBlockedTask(current_time, blocked_list)
 		else:
 			# print("Appending Schedule at 3")
-			schedule.append(Schedule(task=task_to_check, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=task_to_check.left)))
-			current_time += timezone.timedelta(minutes=task_to_check.left)
-			task_to_check.left = 0
-			task_to_check.done = True
-			# task_to_check.save()
+			schedule.append(Schedule(task=task, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=task.left)))
+			current_time += timezone.timedelta(minutes=task.left)
+			task.left = 0
+			task.done = True
+			# task.save()
+	current_time += timezone.timedelta(minutes=task.break_needed_afterwards)
 	return [current_time, schedule, blocked_list]
 
 def scheduleTaskNormally(current_time, task, blocked_list, schedule, time_quantum, *args):
@@ -156,7 +168,7 @@ def scheduleTaskNormally(current_time, task, blocked_list, schedule, time_quantu
 			time_quantum = 0
 			# task.done = True
 			# task.save()
-
+	current_time += timezone.timedelta(minutes=task.break_needed_afterwards)
 	return [current_time, schedule]
 
 def filterRepetitionsOverTasks(task_list, *args):
@@ -193,11 +205,34 @@ def checkForNextDay(current_date, current_time, task_list, blocked_list, weekly_
 
 	return [current_date, task_list, blocked_list]
 
+def scheduleSoftBoundWeeklyTasks(current_time, task_list, weekly_schedule_list, schedule, add_all, *args):
+	if not add_all:
+		[hard_bound_schedule, soft_bound_schedule] = filterHardSoftBoundWeeklyTasks(weekly_schedule_list[current_time.weekday()%7])
+		for task in soft_bound_schedule:
+			if current_time.time() >= task.weekly_schedule.start_time and current_time.time() < task.weekly_schedule.end_time:
+				end_time = datetime.combine(date(current_time.year, current_time.month, current_time.day), task.weekly_schedule.end_time).replace(tzinfo=pytz.UTC)
+				# schedule.append(Schedule(task=task, start_time=current_time, end_time=end_time))
+				current_time = end_time
+
+		return [current_time, schedule]
+	else:
+		midnight = datetime.combine(date(current_time.year, current_time.month, current_time.day), time(0, 0, 0, 0)).replace(tzinfo=pytz.UTC) + timezone.timedelta(days=1)	# Not needed, as time cant exceed 00:00
+		[hard_bound_schedule, soft_bound_schedule] = filterHardSoftBoundWeeklyTasks(weekly_schedule_list[current_time.weekday()%7])
+		for task in soft_bound_schedule:
+			if current_time.time() <= task.weekly_schedule.start_time and current_time < midnight:
+				end_time = datetime.combine(date(current_time.year, current_time.month, current_time.day), task.weekly_schedule.end_time).replace(tzinfo=pytz.UTC)
+				# schedule.append(Schedule(task=task, start_time=task.start_time, end_time=end_time))
+				current_time = end_time
+
+		return [current_time, schedule]
+
 def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *args):	# assuming blocked list and weekly_schedule_list is sorted in ascending order, and there are no time conflicts between them
 	if len(task_list)==0:
 		return None;
 	for s in Schedule.objects.all():	# Comment out later when integration with scheduling database is done.
 		s.delete()
+	START_TIME = datetime.now()
+	print("START_TIME: " + str(START_TIME))
 	schedule = list()
 	done_task_list = list()
 	# current_time = roundToNearestHour(current_time)	# check necessity if already called from parent function
@@ -205,22 +240,29 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *
 	blocked_list = addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_list, 1)
 	current_date = current_time.date() + timezone.timedelta(days=1)
 	while len(task_list) > 0:
-		# for s in schedule:
-			# print("Task name: " + s.task.name + ", start: " + str(s.start_time) + ", end: " + str(s.end_time))
 		[current_date, task_list, blocked_list] = checkForNextDay(current_date, current_time, task_list, blocked_list, weekly_schedule_list)
 		blocked_list = removeBlockedTask(current_time, blocked_list)	# check if this call is absolutely necessary
-		task_list.sort(key=dateSortFunctionWrtDeadline)
-		slack_check_task = task_list[0]
-		slack_time = findSlackTime(slack_check_task, blocked_list, current_time)
-		task_list.pop(0)	# take out task with earliest deadline to check slack validity -> commented to avoid check after task sort
-		print("For task: " + slack_check_task.name + ", slack_time: " + str(slack_time))
-		# task_list.sort(key=alphabeticalSortFunctionWrtName)
-		# task_list.sort(key=dateSortFunctionWrtPriority, reverse=True)	# for timeQuantumSummation to calculate time sum of only higher priorities
-		if (slack_time < timeQuantumSummation(task_list, slack_check_task.priority)):
-			[current_time, schedule, blocked_list] = completeDeadlineApproachingTask(current_time, slack_check_task, blocked_list, schedule)
+		# task_list.sort(key=dateSortFunctionWrtDeadline)
+		unsafe_deadline = False
+		index = 0
+		for task in task_list:	# Check for any deadline approaching tasks
+			slack_check_task = task_list.pop(index)
+			slack_time = findSlackTime(slack_check_task, blocked_list, current_time)
+			print("For task: " + slack_check_task.name + ", slack_time: " + str(slack_time))
+			# task_list.sort(key=alphabeticalSortFunctionWrtName)
+			# task_list.sort(key=dateSortFunctionWrtPriority, reverse=True)	# for timeQuantumSummation to calculate time sum of only higher priorities
+			if (slack_time < timeQuantumSummation(task_list, slack_check_task.priority)):
+				[current_time, schedule, blocked_list] = completeDeadlineApproachingTask(current_time, slack_check_task, blocked_list, schedule)
+				unsafe_deadline = True
+				break
+			else:
+				task_list.insert(index, slack_check_task)
+			index += 1
+
+		if unsafe_deadline:
 			continue
 		else:
-			task_list.insert(0, slack_check_task)	# if slack validity holds good, reinsert the task at inspection
+			# task_list.insert(0, slack_check_task)	# if slack validity holds good, reinsert the task at inspection
 			task_list.sort(key=dateSortFunctionWrtPriority, reverse=True)
 			# Complete 1 cycle of round robin
 			if len(task_list) == 1:	# write seperate logic, combine the task to one
@@ -234,9 +276,6 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *
 				task_list[0] = task
 			else:
 				[todays_task_list, todays_task_list_index, done_repeating_today, done_repeating_today_index] = filterRepetitionsOverTasks(task_list)
-				print("On day: " + str(current_time.date()))
-				for task in todays_task_list:
-					print("Task Name: " + task.name + ", times done today: " + str(task.times_repeated_today))
 				index = 0
 				if len(todays_task_list) == 0:
 					# Check if done_repeating_today tasks have deadline approaching if stated tomorrow?
@@ -246,15 +285,29 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *
 					for task in done_repeating_today:
 						slack_time = findSlackTime(task, blocked_list, current_time)
 						done_repeating_today.pop(index)	# take out task with earliest deadline to check slack validity -> commented to avoid check after task sort
-						print("Inside today list, For task: " + task.name + ", slack_time: " + str(slack_time) + "*****************************")
 						if (slack_time < timeQuantumSummation(done_repeating_today, task.priority)):
-							print("Working ****************************************************************************************************")
 							[saved_current_time, schedule, blocked_list] = completeDeadlineApproachingTask(saved_current_time, task, blocked_list, schedule)
 							task_list[done_repeating_today_index[index]].left = 0
 						index += 1
+						# [current_time, schedule] = scheduleSoftBoundWeeklyTasks(current_time, task_list, weekly_schedule_list, schedule, True)
 						[current_date, task_list, blocked_list] = checkForNextDay(current_date, current_time, task_list, blocked_list, weekly_schedule_list)
 				else:
 					for task in todays_task_list:	# Note: Maintain the time quantum amount of task assignment! -> important for consistancy
+						# current_time_save = current_time
+						# [current_time, schedule] = scheduleSoftBoundWeeklyTasks(current_time, task_list, weekly_schedule_list, schedule, False)
+						# deadline_breached = False
+						# deadline_index = 0
+						# for t in task_list:	# Check for any deadline approaching tasks
+						# 	slack_check_task = task_list.pop(deadline_index)
+						# 	slack_time = findSlackTime(slack_check_task, blocked_list, current_time)
+						# 	if (slack_time < timeQuantumSummation(task_list, slack_check_task.priority)):
+						# 		[current_time, schedule, blocked_list] = completeDeadlineApproachingTask(current_time, slack_check_task, blocked_list, schedule)
+						# 		deadline_breached = True
+						# 	task_list.insert(deadline_index, slack_check_task)
+						# 	deadline_index += 1
+						# if deadline_breached:
+						# 	current_time = current_time_save
+						# 	schedule.pop()
 						time_quantum = task.at_a_stretch
 						[current_time, schedule] = scheduleTaskNormally(current_time, task, blocked_list, schedule, time_quantum)
 						task.left -= task.at_a_stretch
@@ -262,10 +315,11 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *
 						task_list[todays_task_list_index[index]] = task
 						index += 1
 						[current_date, task_list, blocked_list] = checkForNextDay(current_date, current_time, task_list, blocked_list, weekly_schedule_list)
-
-
 		[task_list, done_task_list] = removeDoneTasks(task_list, done_task_list)	# to remove Done Tasks
 
 	for s in schedule:
 		s.save()
+	END_TIME = datetime.now()
+	print("END_TIME: " + str(END_TIME))
+	print("Time difference(seconds): " + str((END_TIME - START_TIME).total_seconds()))
 	return schedule

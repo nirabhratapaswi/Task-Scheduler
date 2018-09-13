@@ -174,7 +174,7 @@ def createWeeklySchedule(request):
 		data["start_time"] = datetime.datetime.strptime(request.POST["start_time"]+":00.00000", "%H:%M:%S.%f").replace(tzinfo=pytz.UTC)
 		data["end_time"] = datetime.datetime.strptime(request.POST["end_time"]+":00.00000", "%H:%M:%S.%f").replace(tzinfo=pytz.UTC)
 		data["minimum_time_to_devote"] = request.POST["minimum_time_to_devote"]
-		data["hard_bound"] = request.POST["hard_bound"]
+		data["hard_bound"] = "hard_bound" in request.POST
 		days_repeated = [int(x) for x in request.POST.getlist("daysrepeated")]
 		print("Days Repeated: ")
 		print(days_repeated)
