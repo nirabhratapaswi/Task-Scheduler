@@ -17,6 +17,8 @@ class Task(models.Model):
 	at_a_stretch = models.IntegerField(default=60)	# how much time you need to do this task once started (in one sitting)
 	left = models.IntegerField(default=60)	# time left to complete the task
 	done = models.BooleanField(default=False)
+	max_repreats_per_day = models.IntegerField(default=4)
+	break_needed_afterwards = models.IntegerField(default=15)
 
 class Schedule(models.Model):
 	task = models.ForeignKey(Task, on_delete=models.CASCADE)
@@ -36,7 +38,8 @@ class WeeklySchedule(models.Model):
 	name = models.CharField(max_length=200)
 	start_time = models.TimeField(default=(timezone.now()+timezone.timedelta(minutes=60)).time())
 	end_time = models.TimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)).time())
-	# repeat_days = models.CharField(max_length=200)	# and array like ["Mon","Wed","Thu","Sun"] -> containing days of the week
+	minimum_time_to_devote = models.IntegerField(default=30)
+	hard_bound = models.BooleanField(default=True)
 
 class DaysRepeated(models.Model):
 	weekly_schedule = models.ForeignKey(WeeklySchedule, on_delete=models.CASCADE)

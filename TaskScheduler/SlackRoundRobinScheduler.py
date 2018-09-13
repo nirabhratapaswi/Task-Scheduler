@@ -57,7 +57,7 @@ def removeBlockedTask(current_time, blocked_list, *args):
 		blocked_list.pop(0)
 	return blocked_list
 
-def removeDoneTasks(task_list, done_task_list, *args):
+def removeDoneTasks(task_list, done_task_list, *args):	# Note, this only removes on the basis of time left to do the task, because task.done is True only when user confirms the tasks are done in real time!
 	left_task_list = list()
 	for t in task_list:
 		if t.left > 0:
@@ -158,8 +158,10 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *
 			task_list.sort(key=dateSortFunctionWrtPriority, reverse=True)
 			# Complete 1 cycle of round robin
 			index = 0
-			for t in task_list:	# Note: Maintain the time quantum amount of task assignment! -> important for consistancy
-				time_quantum = t.at_a_stretch
+			if len(task_list) == 1:	# write seperate logic, combine the task to one
+				# for t in task_list:	# Note: Maintain the time quantum amount of task assignment! -> important for consistancy
+				t = task_list[0]
+				time_quantum = t.left
 				while time_quantum>0:
 					if len(blocked_list) > 0:
 						if current_time < blocked_list[0].start_time:
@@ -168,7 +170,7 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *
 								schedule.append(Schedule(task=t, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=time_quantum)))
 								current_time += timezone.timedelta(minutes=time_quantum)
 								time_quantum = 0
-								t.done = True
+								# t.done = True
 								# t.save()
 							else:
 								# print("Appending Schedule at 5")
@@ -186,9 +188,42 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *
 						time_quantum = 0
 						t.done = True
 						# t.save()
-				t.left -= t.at_a_stretch
+				t.left = 0
+				# t.done = True
 				task_list[index] = t
 				index += 1
+			else:
+				for t in task_list:	# Note: Maintain the time quantum amount of task assignment! -> important for consistancy
+					time_quantum = t.at_a_stretch
+					while time_quantum>0:
+						if len(blocked_list) > 0:
+							if current_time < blocked_list[0].start_time:
+								if (blocked_list[0].start_time - current_time) >= timezone.timedelta(minutes=time_quantum):
+									# print("Appending Schedule at 4")
+									schedule.append(Schedule(task=t, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=time_quantum)))
+									current_time += timezone.timedelta(minutes=time_quantum)
+									time_quantum = 0
+									# t.done = True
+									# t.save()
+								else:
+									# print("Appending Schedule at 5")
+									schedule.append(Schedule(task=t, start_time=current_time, end_time=blocked_list[0].start_time))
+									time_quantum -= (blocked_list[0].start_time - current_time).total_seconds()/60
+									current_time = blocked_list[0].end_time
+									blocked_list = removeBlockedTask(current_time, blocked_list)
+							else:
+								current_time = blocked_list[0].end_time
+								blocked_list = removeBlockedTask(current_time, blocked_list)
+						else:
+							# print("Appending Schedule at 6")
+							schedule.append(Schedule(task=t, start_time=current_time, end_time=current_time+timezone.timedelta(minutes=time_quantum)))
+							current_time += timezone.timedelta(minutes=time_quantum)
+							time_quantum = 0
+							# t.done = True
+							# t.save()
+					t.left -= t.at_a_stretch
+					task_list[index] = t
+					index += 1
 
 		[task_list, done_task_list] = removeDoneTasks(task_list, done_task_list)	# to remove Done Tasks
 
