@@ -1,0 +1,6 @@
+# mysql.conf
+[client]
+database = TaskScheduler
+user = username
+password = password
+default-character-set = utf8
