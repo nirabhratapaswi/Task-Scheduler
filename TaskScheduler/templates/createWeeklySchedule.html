@@ -3,7 +3,111 @@
 <script defer src="{% static 'fontawesome/js/fontawesome-all.min.js' %}"></script>
 <script src="{% static 'js/jquery.js' %}"></script>
 <script src="{% static 'bootstrap-4.1.3-dist/js/bootstrap.min.js' %}"></script>
-<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+
+<style type="text/css">
+	body {
+		background-color: #f0fff0;
+		color: #240090;
+		/*font-family: "Times New Roman", Times, serif;
+		font-size: 20px;*/
+	}
+	.navbar-default {
+		background-color: #1034A6;
+		height: 80px;
+		font-size: 18px;
+		font-weight: bold;
+	}
+	.navbar-default .navbar-brand {
+		color: #FFFF33	;
+		font-weight: bold;
+		font-size: 25px;
+	}
+	label {
+		font-weight: bold;
+	}
+	button {
+		background-color: #7EF9FF;
+	}
+	ul > li {
+		border-style: solid;
+		border-right-width: 2px;
+		border-left-width: 0px;
+		border-top-width: 0px;
+		border-bottom-width: 0px;
+		border-color: #000000;
+	}
+	ul .active {
+		-webkit-box-shadow: 0px 2px 0px #000000;
+		-moz-box-shadow: 0px 2px 0px #000000;
+		box-shadow: 0px 2px 0px #000000;
+	}
+	ul .active > a {
+		color: #ADFF2F;
+	}
+	ul > li > a {
+		color: #FFFF33;
+	}
+
+	/* The snackbar - position it at the bottom and in the middle of the screen */
+	#snackbarMessage {
+	    visibility: hidden; /* Hidden by default. Visible on click */
+	    min-width: 250px; /* Set a default minimum width */
+	    margin-left: -125px; /* Divide value of min-width by 2 */
+	    background-color: #333; /* Black background color */
+	    color: #fff; /* White text color */
+	    text-align: center; /* Centered text */
+	    border-radius: 2px; /* Rounded borders */
+	    padding: 16px; /* Padding */
+	    position: fixed; /* Sit on top of the screen */
+	    z-index: 1; /* Add a z-index if needed */
+	    left: 50%; /* Center the snackbar */
+	    bottom: 30px; /* 30px from the bottom */
+	}
+
+	/* Show the snackbar when clicking on a button (class added with JavaScript) */
+	#snackbarMessage.show {
+	    visibility: visible; /* Show the snackbar */
+	    /* Add animation: Take 0.5 seconds to fade in and out the snackbar. 
+	   However, delay the fade out process for 2.5 seconds */
+	   -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+	   animation: fadein 0.5s, fadeout 0.5s 2.5s;
+	}
+	/* The snackbar - position it at the bottom and in the middle of the screen */
+
+	/* Animations to fade the snackbar in and out */
+	@-webkit-keyframes fadein {
+	    from {bottom: 0; opacity: 0;} 
+	    to {bottom: 30px; opacity: 1;}
+	}
+
+	@keyframes fadein {
+	    from {bottom: 0; opacity: 0;}
+	    to {bottom: 30px; opacity: 1;}
+	}
+
+	@-webkit-keyframes fadeout {
+	    from {bottom: 30px; opacity: 1;} 
+	    to {bottom: 0; opacity: 0;}
+	}
+
+	@keyframes fadeout {
+	    from {bottom: 30px; opacity: 1;}
+	    to {bottom: 0; opacity: 0;}
+	}
+
+	.show {
+		color: red;
+		display: block;
+		margin-left: 2%;
+	}
+	.hide {
+		display: none;
+		margin-left: 2%;
+	}
+</style>
+
+<!-- <nav class="navbar navbar-expand-sm bg-dark navbar-dark"> -->
+<nav class="navbar navbar-expand-sm navbar-default">
 	<div class="container-fluid">
 		<div class="navbar-header">
 			<a class="navbar-brand" href="#">Task Scheduler</a>
@@ -33,18 +137,6 @@
 		</ul>
 	</div>
 </nav>
-
-<style type="text/css">
-	.show {
-		color: red;
-		display: block;
-		margin-left: 2%;
-	}
-	.hide {
-		display: none;
-		margin-left: 2%;
-	}
-</style>
 
 <div id="errorDiv" class="hide"></div>
 <form id="weeklyScheduleForm" class="form-horizontal" method="post" novalidate style="margin-left: 2%; margin-top: 2%;">
@@ -116,6 +208,9 @@
 	</div>
 </form>
 
+<!-- Snackbars -->
+<div id="snackbarMessage"></div>
+
 {% block javascript %}
 	<script>
 		function getCookie(name) {
@@ -136,7 +231,6 @@
 		$(function() {
 			$('#weeklyScheduleForm').submit(function(e) {
 				e.preventDefault();
-				console.log("Preventing form submit.");
 				let data = {};
 				data["days_repeated"] = $("input[name=daysrepeated]:checked").map(function() {
 					return this.value;
@@ -151,30 +245,35 @@
 					return;
 				}
 				data["start_time"] = $("#id_start_time").val();
-				if (data["start_time"] == "" || data["start_time"] == null) {
+				if (data["start_time"] === "" || data["start_time"] == null) {
 					$("#errorDiv").removeClass("hide");
 					$("#errorDiv").html("<b>*Start Time should not be blank</b>");
 					$("#errorDiv").addClass("show");
 					return;
 				}
 				data["end_time"] = $("#id_end_time").val();
-				if (data["end_time"] == "" || data["end_time"] == null) {
+				if (data["end_time"] === "" || data["end_time"] == null) {
 					$("#errorDiv").removeClass("hide");
 					$("#errorDiv").html("<b>*End Time should not be blank</b>");
 					$("#errorDiv").addClass("show");
 					return;
 				}
-				data["minimum_time_to_devote"] = $("#id_minimum_time_to_devote").val() | 0;
-				if (isNaN(data["minimum_time_to_devote"]) || data["minimum_time_to_devote"] == "" || data["minimum_time_to_devote"] == null) {
+				data["hard_bound"] = $("#id_hard_bound:checked").length;
+				if (data["hard_bound"] === "" || data["hard_bound"] == null) {
 					$("#errorDiv").removeClass("hide");
-					$("#errorDiv").html("<b>*Minimum time to devote should be a number.</b>");
+					$("#errorDiv").html("<b>*Hard bound should not be blank</b>");
 					$("#errorDiv").addClass("show");
 					return;
 				}
-				data["hard_bound"] = $("#id_hard_bound").val();
-				if (isNaN(data["hard_bound"]) || data["hard_bound"] == "" || data["hard_bound"] == null) {
+				if (data["hard_bound"] == "0") {
+					data["hard_bound"] = false;
+				} else {
+					data["hard_bound"] = true;
+				}
+				data["minimum_time_to_devote"] = $("#id_minimum_time_to_devote").val() | 0;
+				if (!data["hard_bound"] && (isNaN(data["minimum_time_to_devote"]) || data["minimum_time_to_devote"] === "" || data["minimum_time_to_devote"] == null)) {
 					$("#errorDiv").removeClass("hide");
-					$("#errorDiv").html("<b>*Hard bound should not be blank</b>");
+					$("#errorDiv").html("<b>*Minimum time to devote should be a number.</b>");
 					$("#errorDiv").addClass("show");
 					return;
 				}
@@ -189,8 +288,15 @@
 					data: data,
 					dataType: 'json',
 					success: function (data) {
-						console.log("Weekly Schedule added successfully.");
-						location.reload();
+						if (data.error) {
+							$("#snackbarMessage").text(data.error);
+						} else {
+							$("#snackbarMessage").text(data.msg);
+						}
+						$("#snackbarMessage").addClass("show");
+						setTimeout(function(){
+							$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
+						}, 3000);
 					}
 				});
 			});

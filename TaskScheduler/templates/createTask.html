@@ -5,7 +5,111 @@
 <script src="{% static 'js/jquery.js' %}"></script>
 <script src="{% static 'bootstrap-4.1.3-dist/js/bootstrap.min.js' %}"></script>
 <script src="{% static 'js/jquery-ui.js' %}"></script>
-<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+
+<style type="text/css">
+	body {
+		background-color: #f0fff0;
+		color: #240090;
+		/*font-family: "Times New Roman", Times, serif;
+		font-size: 20px;*/
+	}
+	.navbar-default {
+		background-color: #1034A6;
+		height: 80px;
+		font-size: 18px;
+		font-weight: bold;
+	}
+	.navbar-default .navbar-brand {
+		color: #FFFF33	;
+		font-weight: bold;
+		font-size: 25px;
+	}
+	label {
+		font-weight: bold;
+	}
+	button {
+		background-color: #7EF9FF;
+	}
+	ul > li {
+		border-style: solid;
+		border-right-width: 2px;
+		border-left-width: 0px;
+		border-top-width: 0px;
+		border-bottom-width: 0px;
+		border-color: #000000;
+	}
+	ul .active {
+		-webkit-box-shadow: 0px 2px 0px #000000;
+		-moz-box-shadow: 0px 2px 0px #000000;
+		box-shadow: 0px 2px 0px #000000;
+	}
+	ul .active > a {
+		color: #ADFF2F;
+	}
+	ul > li > a {
+		color: #FFFF33;
+	}
+
+	/* The snackbar - position it at the bottom and in the middle of the screen */
+	#snackbarMessage {
+	    visibility: hidden; /* Hidden by default. Visible on click */
+	    min-width: 250px; /* Set a default minimum width */
+	    margin-left: -125px; /* Divide value of min-width by 2 */
+	    background-color: #333; /* Black background color */
+	    color: #fff; /* White text color */
+	    text-align: center; /* Centered text */
+	    border-radius: 2px; /* Rounded borders */
+	    padding: 16px; /* Padding */
+	    position: fixed; /* Sit on top of the screen */
+	    z-index: 1; /* Add a z-index if needed */
+	    left: 50%; /* Center the snackbar */
+	    bottom: 30px; /* 30px from the bottom */
+	}
+
+	/* Show the snackbar when clicking on a button (class added with JavaScript) */
+	#snackbarMessage.show {
+	    visibility: visible; /* Show the snackbar */
+	    /* Add animation: Take 0.5 seconds to fade in and out the snackbar. 
+	   However, delay the fade out process for 2.5 seconds */
+	   -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+	   animation: fadein 0.5s, fadeout 0.5s 2.5s;
+	}
+	/* The snackbar - position it at the bottom and in the middle of the screen */
+
+	/* Animations to fade the snackbar in and out */
+	@-webkit-keyframes fadein {
+	    from {bottom: 0; opacity: 0;} 
+	    to {bottom: 30px; opacity: 1;}
+	}
+
+	@keyframes fadein {
+	    from {bottom: 0; opacity: 0;}
+	    to {bottom: 30px; opacity: 1;}
+	}
+
+	@-webkit-keyframes fadeout {
+	    from {bottom: 30px; opacity: 1;} 
+	    to {bottom: 0; opacity: 0;}
+	}
+
+	@keyframes fadeout {
+	    from {bottom: 30px; opacity: 1;}
+	    to {bottom: 0; opacity: 0;}
+	}
+
+	.show {
+		color: red;
+		display: block;
+		margin-left: 2%;
+	}
+	.hide {
+		display: none;
+		margin-left: 2%;
+	}
+</style>
+
+<!-- <nav class="navbar navbar-expand-sm bg-dark navbar-dark"> -->
+<nav class="navbar navbar-expand-sm navbar-default">
 	<div class="container-fluid">
 		<div class="navbar-header">
 			<a class="navbar-brand" href="#">Task Scheduler</a>
@@ -35,18 +139,6 @@
 		</ul>
 	</div>
 </nav>
-
-<style type="text/css">
-	.show {
-		color: red;
-		display: block;
-		margin-left: 2%;
-	}
-	.hide {
-		display: none;
-		margin-left: 2%;
-	}
-</style>
 
 <div id="errorDiv" class="hide"></div>
 <form id="taskForm" class="form-horizontal" method="post" novalidate style="margin-left: 2%; margin-top: 2%;">
@@ -103,8 +195,68 @@
 	</div>
 </form>
 
+<!-- Snackbars -->
+<div id="snackbarMessage"></div>
+
 {% block javascript %}
 <script type="text/javascript">
+	function checkValidForm(data) {
+		if (data["name"] == "" || data["name"] == null) {
+			$("#errorDiv").removeClass("hide");
+			$("#errorDiv").html("<b>*Name should not be blank</b>");
+			$("#errorDiv").addClass("show");
+			return;
+		}
+		if (isNaN(data["priority"]) || data["priority"] === "" || data["priority"] == null) {
+			$("#errorDiv").removeClass("hide");
+			$("#errorDiv").html("<b>*Priority should be a number</b>");
+			$("#errorDiv").addClass("show");
+			return false;
+		}
+		if (isNaN(data["span"]) || data["span"] === "" || data["span"] == null) {
+			$("#errorDiv").removeClass("hide");
+			$("#errorDiv").html("<b>*Span should be a number</b>");
+			$("#errorDiv").addClass("show");
+			return false;
+		}
+		if (data["deadline_date"] === "" || data["deadline_date"] == null) {
+			$("#errorDiv").removeClass("hide");
+			$("#errorDiv").html("<b>*Select a valid Deadline Date</b>");
+			$("#errorDiv").addClass("show");
+			return false;
+		}
+		if (data["deadline_time"] === "" || data["deadline_time"] == null) {
+			$("#errorDiv").removeClass("hide");
+			$("#errorDiv").html("<b>*Select a valid Deadline Time</b>");
+			$("#errorDiv").addClass("show");
+			return false;
+		}
+		if (isNaN(data["at_a_stretch"]) || data["at_a_stretch"] === "" || data["at_a_stretch"] == null) {
+			$("#errorDiv").removeClass("hide");
+			$("#errorDiv").html("<b>*At a stretch should be a number</b>");
+			$("#errorDiv").addClass("show");
+			return false;
+		}
+		if (isNaN(data["max_repeats_per_day"]) || data["max_repeats_per_day"] === "" || data["max_repeats_per_day"] == null) {
+			$("#errorDiv").removeClass("hide");
+			$("#errorDiv").html("<b>*Max repeats per day should be a number</b>");
+			$("#errorDiv").addClass("show");
+			return false;
+		}
+		if (isNaN(data["break_needed_afterwards"]) || data["break_needed_afterwards"] === "" || data["break_needed_afterwards"] == null) {
+			$("#errorDiv").removeClass("hide");
+			$("#errorDiv").html("<b>*Break needded afterwards should be a number</b>");
+			$("#errorDiv").addClass("show");
+			return false;
+		}
+		if (new Date() >= new Date(data["deadline_date"].concat(" ", data["deadline_time"]))) {
+			$("#errorDiv").removeClass("hide");
+			$("#errorDiv").html("<b>*Select a date-time in the future!</b>");
+			$("#errorDiv").addClass("show");
+			return false;
+		}
+		return true;
+	}
 	$(function() {
 		function getCookie(name) {
 			var cookieValue = null;
@@ -125,72 +277,20 @@
 		$("#id_deadline_date").datepicker("option", "showAnim", "slideDown");
 		$('#taskForm').submit(function(e) {
 			e.preventDefault();
-			console.log("Preventing form submit.");
 			let data = {};
 			data["name"] = $("#id_name").val();
-			if (data["name"] == "" || data["name"] == null) {
-				$("#errorDiv").removeClass("hide");
-				$("#errorDiv").html("<b>*Name should not be blank</b>");
-				$("#errorDiv").addClass("show");
-				return;
-			}
 			data["priority"] = $("#id_priority").val();
-			if (isNaN(data["priority"]) || data["priority"] == "" || data["priority"] == null) {
-				$("#errorDiv").removeClass("hide");
-				$("#errorDiv").html("<b>*Priority should be a number</b>");
-				$("#errorDiv").addClass("show");
-				return;
-			}
 			data["span"] = $("#id_span").val();
-			if (isNaN(data["span"]) || data["span"] == "" || data["span"] == null) {
-				$("#errorDiv").removeClass("hide");
-				$("#errorDiv").html("<b>*Span should be a number</b>");
-				$("#errorDiv").addClass("show");
-				return;
-			}
 			data["deadline_date"] = $("#id_deadline_date").val();
-			if (data["deadline_date"] == "" || data["deadline_date"] == null) {
-				$("#errorDiv").removeClass("hide");
-				$("#errorDiv").html("<b>*Select a valid Deadline Date</b>");
-				$("#errorDiv").addClass("show");
-				return;
-			}
 			data["deadline_time"] = $("#id_deadline_time").val();
-			if (data["deadline_time"] == "" || data["deadline_time"] == null) {
-				$("#errorDiv").removeClass("hide");
-				$("#errorDiv").html("<b>*Select a valid Deadline Time</b>");
-				$("#errorDiv").addClass("show");
-				return;
-			}
-			if (new Date() >= new Date(data["deadline_date"].concat(" ", data["deadline_time"]))) {
-				$("#errorDiv").removeClass("hide");
-				$("#errorDiv").html("<b>*Select a date-time in the future!</b>");
-				$("#errorDiv").addClass("show");
-				return;
-			}
 			data["at_a_stretch"] = $("#id_at_a_stretch").val();
-			if (isNaN(data["at_a_stretch"]) || data["at_a_stretch"] == "" || data["at_a_stretch"] == null) {
-				$("#errorDiv").removeClass("hide");
-				$("#errorDiv").html("<b>*At a stretch should be a number</b>");
-				$("#errorDiv").addClass("show");
-				return;
-			}
 			data["max_repeats_per_day"] = $("#id_max_repeats_per_day").val();
-			if (isNaN(data["max_repeats_per_day"]) || data["max_repeats_per_day"] == "" || data["max_repeats_per_day"] == null) {
-				$("#errorDiv").removeClass("hide");
-				$("#errorDiv").html("<b>*Max repeats per day should be a number</b>");
-				$("#errorDiv").addClass("show");
-				return;
-			}
 			data["break_needed_afterwards"] = $("#id_break_needed_afterwards").val();
-			if (isNaN(data["break_needed_afterwards"]) || data["break_needed_afterwards"] == "" || data["break_needed_afterwards"] == null) {
-				$("#errorDiv").removeClass("hide");
-				$("#errorDiv").html("<b>*Break needded afterwards should be a number</b>");
-				$("#errorDiv").addClass("show");
+			if (!checkValidForm(data)) {
 				return;
 			}
 			console.log("Data for creating task: ", data);
-			/*$.ajax({
+			$.ajax({
 				url: 'http://localhost:8000/tasksheduler/taskscheduler/createtask',
 				contentType: "application/x-www-form-urlencoded",
 				type: "POST",
@@ -200,10 +300,17 @@
 				data: data,
 				dataType: 'json',
 				success: function (data) {
-					console.log("Task added successfully.");
-					location.reload();
+					if (data.error) {
+						$("#snackbarMessage").text(data.error);
+					} else {
+						$("#snackbarMessage").text(data.msg);
+					}
+					$("#snackbarMessage").addClass("show");
+					setTimeout(function(){
+						$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
+					}, 3000);
 				}
-			});*/
+			});
 		});
 	});
 </script>

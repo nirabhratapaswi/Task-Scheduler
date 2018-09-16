@@ -79,6 +79,8 @@ def createTask(request):
 	if request.method == "POST":
 		data = dict()
 		print("Date: " + str(request.POST["deadline_date"]) + ", Time: " + str(request.POST["deadline_time"]))
+		if "id" in request.POST:
+			data["id"] = request.POST["id"]
 		data["name"] = request.POST["name"]
 		data["priority"] = request.POST["priority"]
 		data["span"] = request.POST["span"]
@@ -91,16 +93,20 @@ def createTask(request):
 		# aware_datetime = datetime.datetime.strptime(data["deadline"]+":00", "%Y-%m-%dT%H:%M:%S").replace(tzinfo=pytz.UTC)
 		# data["deadline"] = aware_datetime
 		print(data["name"]+", "+str(data["priority"])+", "+str(data["span"])+", "+str(data["deadline"])+", "+str(data["at_a_stretch"]))
-		crud.createTask(name=data["name"], priority=data["priority"], span=data["span"], deadline=data["deadline"], at_a_stretch=data["at_a_stretch"], done=False, max_repeats_per_day=data["max_repeats_per_day"], times_repeated_today=data["times_repeated_today"], break_needed_afterwards=data["break_needed_afterwards"])
-		return HttpResponse(json.dumps({"msg": "Task Created Successfully."}), content_type="application/json")
+		if "id" in request.POST:
+			[success, error] = crud.createTask(name=data["name"], priority=data["priority"], span=data["span"], deadline=data["deadline"], at_a_stretch=data["at_a_stretch"], done=False, max_repeats_per_day=data["max_repeats_per_day"], times_repeated_today=data["times_repeated_today"], break_needed_afterwards=data["break_needed_afterwards"], id=data["id"])
+		else:
+			[success, error] = crud.createTask(name=data["name"], priority=data["priority"], span=data["span"], deadline=data["deadline"], at_a_stretch=data["at_a_stretch"], done=False, max_repeats_per_day=data["max_repeats_per_day"], times_repeated_today=data["times_repeated_today"], break_needed_afterwards=data["break_needed_afterwards"])
+		if success:
+			return HttpResponse(json.dumps({"msg": "Task Created Successfully."}), content_type="application/json")
+		else:
+			return HttpResponse(json.dumps({"error": error}), content_type="application/json")
 	else:
 		return render(request, 'createTask.html', {'form': Forms.TaskForm})
 
 def getTasks(request):
 	# if this is a POST request we need to process the form data
-	tasks = Task.objects.all()
-	for t in tasks:
-		print("Task Name: " + t.name)
+	tasks = crud.readAllTasks()
 	return render(request, 'taskList.html', {'tasks': tasks})
 
 def deleteTask(request):
@@ -110,8 +116,11 @@ def deleteTask(request):
 		print("Id: " + data["id"])
 		# t = Task.objects.filter(pk=data["id"])
 		# t.delete()
-		crud.deleteTaskById(task_id=data["id"])
-		return HttpResponse(json.dumps({"msg": "Task Deleted Successfully."}), content_type="application/json")
+		[success, error] = crud.deleteTaskById(task_id=data["id"])
+		if success:
+			return HttpResponse(json.dumps({"msg": "Task Deleted Successfully."}), content_type="application/json")
+		else:
+			return HttpResponse(json.dumps({"error": error}), content_type="application/json")
 		# if form.is_valid():
 		# 	data = form.cleaned_data
 		# 	print(data["name"]+", "+str(data["priority"])+", "+str(data["span"])+", "+str(data["deadline"])+", "+str(data["at_a_stretch"]))
@@ -121,6 +130,8 @@ def deleteTask(request):
 def createBlocked(request):
 	if request.method=="POST":
 		data = dict()
+		if "id" in request.POST:
+			data["id"] = request.POST["id"]
 		data["name"] = request.POST["name"]
 		# data["start_time"] = datetime.datetime.strptime(request.POST["start_time"], "%Y-%m-%dT%H:%M")
 		# data["end_time"] = datetime.datetime.strptime(request.POST["end_time"], "%Y-%m-%dT%H:%M")
@@ -133,16 +144,20 @@ def createBlocked(request):
 		print(data["name"]+", "+str(data["start_time"])+", "+str(data["end_time"]))
 		# b = Blocked(name=data["name"], start_time=data["start_time"], end_time=data["end_time"])
 		# b.save()
-		crud.createBlocked(name=data["name"], start_time=data["start_time"], end_time=data["end_time"])
-		return HttpResponse(json.dumps({"msg": "Blocked Task Created Successfully."}), content_type="application/json")
+		if "id" in request.POST:
+			[success, error] = crud.createBlocked(name=data["name"], start_time=data["start_time"], end_time=data["end_time"], id=data["id"])
+		else:
+			[success, error] = crud.createBlocked(name=data["name"], start_time=data["start_time"], end_time=data["end_time"])
+		if success:
+			return HttpResponse(json.dumps({"msg": "Blocked Task Created Successfully."}), content_type="application/json")
+		else:
+			return HttpResponse(json.dumps({"error": error}), content_type="application/json")
 	else:
 		return render(request, "createBlocked.html", {'form': Forms.BlockedForm})
 
 def getBlocked(request):
 	# if this is a POST request we need to process the form data
-	blocked = Blocked.objects.all()
-	for b in blocked:
-		print("Blocked Name: " + b.name)
+	blocked = crud.readBlocked()
 	return render(request, 'blockedList.html', {'blocked': blocked})
 
 def deleteBlocked(request):
@@ -152,8 +167,11 @@ def deleteBlocked(request):
 		print("Id: " + data["id"])
 		# b = Blocked.objects.filter(pk=data["id"])
 		# b.delete()
-		crud.deleteBlockedById(blocked_id=data["id"])
-		return HttpResponse(json.dumps({"msg": "Blocked Deleted Successfully."}), content_type="application/json")
+		[success, error] = crud.deleteBlockedById(blocked_id=data["id"])
+		if success:
+			return HttpResponse(json.dumps({"msg": "Blocked Deleted Successfully."}), content_type="application/json")
+		else:
+			return HttpResponse(json.dumps({"error": error}), content_type="application/json")
 		# if form.is_valid():
 		# 	data = form.cleaned_data
 		# 	print(data["name"]+", "+str(data["priority"])+", "+str(data["span"])+", "+str(data["deadline"])+", "+str(data["at_a_stretch"]))
@@ -163,28 +181,36 @@ def deleteBlocked(request):
 def createWeeklySchedule(request):
 	if request.method=="POST":
 		data = dict()
+		if "id" in request.POST:
+			data["id"] = request.POST["id"]
 		data["name"] = request.POST["name"]
-		data["start_time"] = datetime.datetime.strptime(request.POST["start_time"]+":00.00000", "%H:%M:%S.%f").replace(tzinfo=pytz.UTC)
-		data["end_time"] = datetime.datetime.strptime(request.POST["end_time"]+":00.00000", "%H:%M:%S.%f").replace(tzinfo=pytz.UTC)
+		data["start_time"] = datetime.datetime.strptime(request.POST["start_time"]+":00.00000", "%H:%M:%S.%f").replace(tzinfo=pytz.UTC).time()
+		data["end_time"] = datetime.datetime.strptime(request.POST["end_time"]+":00.00000", "%H:%M:%S.%f").replace(tzinfo=pytz.UTC).time()
 		data["minimum_time_to_devote"] = request.POST["minimum_time_to_devote"]
-		data["hard_bound"] = "hard_bound" in request.POST
+		data["hard_bound"] = False
+		if "hard_bound" in request.POST:
+			print("Value of hard_bound: " + str(request.POST["hard_bound"]) + ", type: " + str(type(request.POST["hard_bound"])))
+			data["hard_bound"] = request.POST["hard_bound"] in ["True", "true", 1, "1", "Yes", "yes"]
 		# days_repeated = [int(x) for x in request.POST.getlist("daysrepeated")]
-		days_repeated = request.POST["days_repeated"].split(",")
-		print("Days Repeated: ")
-		print(days_repeated)
+		if "id" not in request.POST:
+			days_repeated = request.POST["days_repeated"].split(",")
 		print(data["name"]+", "+str(data["start_time"])+", "+str(data["end_time"]))
 		# w = WeeklySchedule(name=data["name"], start_time=data["start_time"], end_time=data["end_time"])
 		# w.save()
-		crud.createWeeklySchedule(name=data["name"], start_time=data["start_time"], end_time=data["end_time"], days_repeated=days_repeated, minimum_time_to_devote=data["minimum_time_to_devote"], hard_bound=data["hard_bound"])
-		return HttpResponse(json.dumps({"msg": "Weekly Schedule Created Successfully."}), content_type="application/json")
+		if "id" in request.POST:
+			[success, error] = crud.createWeeklySchedule(name=data["name"], start_time=data["start_time"], end_time=data["end_time"], days_repeated=list(), minimum_time_to_devote=data["minimum_time_to_devote"], hard_bound=data["hard_bound"], id=data["id"])
+		else:
+			[success, error] = crud.createWeeklySchedule(name=data["name"], start_time=data["start_time"], end_time=data["end_time"], days_repeated=days_repeated, minimum_time_to_devote=data["minimum_time_to_devote"], hard_bound=data["hard_bound"])
+		if success:
+			return HttpResponse(json.dumps({"msg": "Weekly Schedule Created Successfully."}), content_type="application/json")
+		else:
+			return HttpResponse(json.dumps({"error": error}), content_type="application/json")
 	else:
 		return render(request, "createWeeklySchedule.html", {'form': Forms.WeeklyScheduleForm})
 
 def getWeeklySchedule(request):
 	# if this is a POST request we need to process the form data
-	weekly_schedule = WeeklySchedule.objects.all()
-	for w in weekly_schedule:
-		print("Weekly Schedule Name: " + w.name)
+	weekly_schedule = crud.readWeeklySchedule()
 	return render(request, 'weeklyScheduleList.html', {'weekly_schedule': weekly_schedule})
 
 def deleteWeeklySchedule(request):
@@ -194,8 +220,11 @@ def deleteWeeklySchedule(request):
 		print("Id: " + data["id"])
 		# w = WeeklySchedule.objects.filter(pk=data["id"])
 		# w.delete()
-		crud.deleteWeeklyScheduleById(weekly_schedule_id=data["id"])
-		return HttpResponse(json.dumps({"msg": "Weekly Schedule Deleted Successfully."}), content_type="application/json")
+		[success, error] = crud.deleteWeeklyScheduleById(weekly_schedule_id=data["id"])
+		if success:
+			return HttpResponse(json.dumps({"msg": "Weekly Schedule Deleted Successfully."}), content_type="application/json")
+		else:
+			return HttpResponse(json.dumps({"error": error}), content_type="application/json")
 		# if form.is_valid():
 		# 	data = form.cleaned_data
 		# 	print(data["name"]+", "+str(data["priority"])+", "+str(data["span"])+", "+str(data["deadline"])+", "+str(data["at_a_stretch"]))

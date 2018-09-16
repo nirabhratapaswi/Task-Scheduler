@@ -231,7 +231,7 @@ def scheduleSoftBoundWeeklyTasks(current_time, task_list, weekly_schedule_list, 
 
 def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *args):	# assuming blocked list and weekly_schedule_list is sorted in ascending order, and there are no time conflicts between them
 	if len(task_list)==0:
-		return None;
+		return list()
 	START_TIME = datetime.now()
 	print("START_TIME: " + str(START_TIME))
 	schedule = list()
