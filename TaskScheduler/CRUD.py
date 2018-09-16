@@ -7,6 +7,8 @@ def createTask(name, priority, span, deadline, at_a_stretch, done, max_repeats_p
 			task.name = name
 			task.priority = priority
 			task.deadline = deadline
+			task.span = span
+			task.left = span
 			task.at_a_stretch = at_a_stretch
 			task.done = done
 			task.max_repeats_per_day = max_repeats_per_day
@@ -179,3 +181,11 @@ def getWeeklySchedulePerDayAsList(*args):
 		weekly_schedule.append(DaysRepeated.objects.filter(day_index=day).order_by('weekly_schedule__start_time'))
 
 	return weekly_schedule
+
+# Scheduling CRUDs
+def readPastSchedulesAsList(current_time, *args):
+	schedule = list()
+	for s in Schedule.objects.filter(start_time__lte=current_time):
+		schedule.append(s)
+	Schedule.objects.filter(start_time__gt=current_time).delete()
+	return schedule

@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.utils import timezone
 import datetime
 import pytz
-from .models import Task, Blocked, WeeklySchedule, DaysRepeated
+from .models import Task, Blocked, WeeklySchedule, DaysRepeated, Schedule
 from . import SlackRoundRobinScheduler as SRRS
 from . import CRUD as crud
 from . import schedulerAlgorithms as scAlgo
@@ -43,28 +43,56 @@ def prioritySchedule(request):
 	# return render(request, 'schedule.html', {'schedule': schedule})
 
 def schedule(request):
+	# for s in Schedule.objects.all():	# remove this after testing
+	# 	s.delete()
+
+	tz = pytz.UTC
+	current_time_utc = timezone.now()
+	current_time_regional = SRRS.roundToNearestHour(tz.normalize(tz.localize((current_time_utc).replace(tzinfo=None))).astimezone(pytz.timezone("Asia/Calcutta")).replace(tzinfo=pytz.UTC))
+	# current_time_regional += timezone.timedelta(minutes=300)
+	# current_time = SRRS.roundToNearestHour(current_time.replace(tzinfo=pytz.UTC))
+	print("Current Time: " + str(current_time_regional))
+	schedules_till_now = crud.readPastSchedulesAsList(current_time_regional)
+	print("Past Schedules: " + str(len(schedules_till_now)))
+	for s in schedules_till_now:
+		print("Past Schedule name: " + s.task.name)
+	schedule = list()
+	max_end_time = current_time_regional
+	for t in Task.objects.all():
+		t.times_repeated_today = 0
+		t.save()
+	for s in schedules_till_now:
+		max_end_time = max(max_end_time, s.end_time)
+		s.task.left -= (s.end_time - s.start_time).total_seconds()/60
+		if s.task.left == 0:
+			s.task.done = True
+		if s.end_time.weekday() == current_time_regional.weekday():
+			s.task.times_repeated_today += 1
+		s.task.save()
+		schedule.append(s)
+
+	current_time_regional = max(max_end_time, current_time_regional)
 	tasks = crud.readUndoneTasks()
-	blocked = crud.readBlocked(timezone.now())
+	blocked = crud.readBlocked(current_time_regional)
 	weekly_schedule = crud.getWeeklySchedulePerDayAsList()
 	taskList = list()
 	for t in tasks:
 		taskList.append(t)
-
 	blockedList = list()
 	for b in blocked:
 		blockedList.append(b)
 
-	# schedule = scAlgo.scheduleTasks(taskList, blockedList)
-	# current_time = SRRS.roundToNearestHour(timezone.now())
-	tz = pytz.UTC
-	current_time = SRRS.roundToNearestHour(tz.normalize(tz.localize(timezone.now().replace(tzinfo=None))).astimezone(pytz.timezone("Asia/Calcutta")).replace(tzinfo=pytz.UTC))
-	print("Current Time: " + str(current_time))
-	# current_time = pytz.timezone("Asia/Calcutta").localize(current_time.replace(tzinfo=None))
-	schedule = SRRS.scheduleTasks(taskList, current_time, blockedList, weekly_schedule)
+	# current_time_regional = pytz.timezone("Asia/Calcutta").localize(current_time_regional.replace(tzinfo=None))
+	for s in schedule:
+		print("Task name: " + s.task.name + ", time left: " + str(s.task.left))
+	schedule = SRRS.scheduleTasks(taskList, current_time_regional, blockedList, weekly_schedule, schedule)
 
 	print("Schedule: ")
 	for s in schedule:
 		print("Task name: " + s.task.name + ", start: " + str(s.start_time) + ", end: " + str(s.end_time))
+		if s.start_time >= current_time_regional:
+			print("Saving schedule: " + s.task.name)
+			s.save()
 
 	# index = 0
 	# for s in schedule:
@@ -73,7 +101,9 @@ def schedule(request):
 	# 	schedule[index] = s
 	# 	index += 1
 
-	return render(request, 'schedule.html', {'schedule': schedule})
+	full_schedule = Schedule.objects.all()
+
+	return render(request, 'schedule.html', {'schedule': [s for s in full_schedule]})
 
 def createTask(request):
 	if request.method == "POST":

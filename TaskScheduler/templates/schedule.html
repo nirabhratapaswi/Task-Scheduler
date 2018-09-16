@@ -81,10 +81,35 @@
 	</div>
 </nav>
 
+<!-- Trigger the modal with a button -->
+<button id="modalOpenBtn" type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#confirmModal" style="display: none;">Open Modal</button>
+<!-- Modal -->
+<div class="modal fade" id="confirmModal" role="dialog">
+	<div class="modal-dialog">
+		<!-- Modal content-->
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button><br>
+				<!-- <h4 class="modal-title">Mark Task as Undone</h4> -->
+			</div>
+			<div class="modal-body">
+				<p>All tasks in schedule before current time is considered done, in case you missed some task, mark it as undone so that we can reschedule it for you and you don't miss your deadline:)</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" id="taskUndone" data-dismiss="modal">Mark as Undone?</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>  
+	</div>
+</div>
+
 <script type="text/javascript">
 	var schedule = new Array();
+	let i = 0;
 	{% for s in schedule %}
+		console.log("Schedule "+(i++).toString()+": ", "{{ s }}");
 		schedule.push({
+			id: "{{ s.id }}",
 			task_name: "{{ s.task.name }}",
 			/*start_time: "{{ s.start_time }}",
 			end_time: "{{ s.end_time }}"*/
