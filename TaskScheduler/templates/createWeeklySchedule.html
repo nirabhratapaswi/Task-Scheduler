@@ -213,6 +213,8 @@
 
 {% block javascript %}
 	<script>
+		var SERVER_URL = "{{ SERVER_URL }}";
+		console.log("SERVER_URL: ", SERVER_URL);
 		function getCookie(name) {
 			var cookieValue = null;
 				if (document.cookie && document.cookie != '') {
@@ -279,7 +281,7 @@
 				}
 				console.log("Data: ", data);
 				$.ajax({
-					url: 'http://localhost:8000/tasksheduler/taskscheduler/createweeklyschedule',
+					url: SERVER_URL.concat("/taskscheduler/createweeklyschedule"),
 					contentType: "application/x-www-form-urlencoded",
 					type: "POST",
 					headers: {

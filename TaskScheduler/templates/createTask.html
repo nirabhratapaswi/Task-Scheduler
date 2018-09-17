@@ -200,6 +200,8 @@
 
 {% block javascript %}
 <script type="text/javascript">
+	var SERVER_URL = "{{ SERVER_URL }}";
+	console.log("SERVER_URL: ", SERVER_URL);
 	function checkValidForm(data) {
 		if (data["name"] == "" || data["name"] == null) {
 			$("#errorDiv").removeClass("hide");
@@ -291,7 +293,7 @@
 			}
 			console.log("Data for creating task: ", data);
 			$.ajax({
-				url: 'http://localhost:8000/tasksheduler/taskscheduler/createtask',
+				url: SERVER_URL.concat("/taskscheduler/createtask"),
 				contentType: "application/x-www-form-urlencoded",
 				type: "POST",
 				headers: {

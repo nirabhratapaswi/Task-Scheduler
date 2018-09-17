@@ -229,30 +229,26 @@ def scheduleSoftBoundWeeklyTasks(current_time, task_list, weekly_schedule_list, 
 	# print ("Current time returning: " + str(current_time) + ", with add_all: " + str(add_all))
 	return [current_time, schedule]
 
-def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, schedule, *args):	# assuming blocked list and weekly_schedule_list is sorted in ascending order, and there are no time conflicts between them
+def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, *args):	# assuming blocked list and weekly_schedule_list is sorted in ascending order, and there are no time conflicts between them
 	if len(task_list)==0:
 		return list()
+	schedule = list()
 	START_TIME = datetime.now()
 	print("START_TIME: " + str(START_TIME))
 	done_task_list = list()
-	# current_time = roundToNearestHour(current_time)	# check necessity if already called from parent function
 	blocked_list = addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_list, 0)
 	blocked_list = addWeekdayScheduleToBlockedList(current_time, blocked_list, weekly_schedule_list, 1)
 	current_date = current_time.date() + timezone.timedelta(days=1)
 	while len(task_list) > 0:
 		[current_date, task_list, blocked_list] = checkForNextDay(current_date, current_time, task_list, blocked_list, weekly_schedule_list)
 		blocked_list = removeBlockedTask(current_time, blocked_list)	# check if this call is absolutely necessary
-		# task_list.sort(key=dateSortFunctionWrtDeadline)
 		unsafe_deadline = False
 		index = 0
 		for task in task_list:	# Check for any deadline approaching tasks
 			slack_check_task = task_list.pop(index)
 			slack_time = findSlackTime(slack_check_task, blocked_list, current_time)
-			print("For task: " + slack_check_task.name + ", slack_time: " + str(slack_time))
-			# task_list.sort(key=alphabeticalSortFunctionWrtName)
-			# task_list.sort(key=dateSortFunctionWrtPriority, reverse=True)	# for timeQuantumSummation to calculate time sum of only higher priorities
+			# print("For task: " + slack_check_task.name + ", slack_time: " + str(slack_time))
 			if (slack_time < timeQuantumSummation(task_list, slack_check_task.priority)):
-				print("Deadline breached at 03 for: " + slack_check_task.name + " at time: " + str(current_time))
 				[current_time, schedule, blocked_list] = completeDeadlineApproachingTask(current_time, slack_check_task, blocked_list, schedule)
 				current_time += timezone.timedelta(minutes=slack_check_task.break_needed_afterwards)
 				unsafe_deadline = True
@@ -276,7 +272,6 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, s
 					slack_time = findSlackTime(task, blocked_list, current_time)
 					done_repeating_today.pop(index)
 					if (slack_time < timeQuantumSummation(done_repeating_today, task.priority)):
-						print("Deadline breached at 05 for: " + task.name + " at time: " + str(current_time))
 						current_time = current_time_save
 						[current_time, schedule, blocked_list] = completeDeadlineApproachingTask(current_time, task, blocked_list, schedule)
 						current_time += timezone.timedelta(minutes=task.break_needed_afterwards)
@@ -298,16 +293,12 @@ def scheduleTasks(task_list, current_time, blocked_list, weekly_schedule_list, s
 						slack_check_task = task_list.pop(deadline_index)
 						slack_time = findSlackTime(slack_check_task, blocked_list, current_time)
 						if (slack_time < timeQuantumSummation(task_list, slack_check_task.priority)):
-							print("Deadline breached at 06 for: " + slack_check_task.name + " at time: " + str(current_time))
-							# [current_time, schedule, blocked_list] = completeDeadlineApproachingTask(current_time, slack_check_task, blocked_list, schedule)
 							deadline_breached = True
 						task_list.insert(deadline_index, slack_check_task)
 						deadline_index += 1
 					if deadline_breached:
 						current_time = current_time_save
-						# schedule.pop()
-					# current_time = current_time_save
-					time_quantum = task.at_a_stretch
+					time_quantum = min(task.at_a_stretch, task.left)
 					[current_time, schedule] = scheduleTaskNormally(current_time, task, blocked_list, schedule, time_quantum)
 					task.left -= task.at_a_stretch
 					task.times_repeated_today += 1

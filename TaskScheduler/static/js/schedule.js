@@ -1,8 +1,23 @@
 var calendar;
 var selected_task;
 
+function getCookie(name) {
+	var cookieValue = null;
+		if (document.cookie && document.cookie != '') {
+		var cookies = document.cookie.split(';');
+			for (var i = 0; i < cookies.length; i++) {
+			var cookie = jQuery.trim(cookies[i]);
+			// Does this cookie string begin with the name we want?
+			if (cookie.substring(0, name.length + 1) == (name + '=')) {
+				cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+				break;
+			}
+		}
+	}
+	return cookieValue;
+}
+
 $(function() {
-	console.log("Document is ready");
 	document.getElementById("calendar").style.width = window.innerWidth * 0.9;
 	window.addEventListener("resize", function() {
 		document.getElementById("calendar").style.width = window.innerWidth * 0.9;
@@ -24,28 +39,105 @@ $(function() {
 			}
 		}, events: function(start, end, timezone, callback) {
 			let calendarSchedules = new Array();
+			let time_now = new Date();
+			let today = (new Date(time_now.setMinutes(time_now.getMinutes() - time_now.getTimezoneOffset()))).toISOString();	// To convert local time now to UTC numeric-similar time(not equivalent)
 			for (let x in schedule) {
-				calendarSchedules.push({
-					id: schedule[x].id,
-					title: schedule[x].task_name,
-					start: schedule[x].start_time.toISOString(),	//'2018-01-18T22:30:00+09:00',
-					end: schedule[x].end_time.toISOString()//'2018-01-19T02:30:00+09:00'
-				});
+				if (x.done == "true" || x.done == "True" || x.done == 1 || x.done == "1"){
+					calendarSchedules.push({
+						id: schedule[x].id,
+						title: schedule[x].task_name,
+						start: schedule[x].start_time.toISOString(),
+						end: schedule[x].end_time.toISOString(),
+						editable: false,
+						backgroundColor: '#DC143C'
+					});
+				} else {
+					if (today >= schedule[x].end_time.toISOString()) {
+						calendarSchedules.push({
+							id: schedule[x].id,
+							title: schedule[x].task_name,
+							start: schedule[x].start_time.toISOString(),
+							end: schedule[x].end_time.toISOString(),
+							editable: false,
+							backgroundColor: '#008000'
+						});
+					} else {
+						calendarSchedules.push({
+							id: schedule[x].id,
+							title: schedule[x].task_name,
+							start: schedule[x].start_time.toISOString(),
+							end: schedule[x].end_time.toISOString(),
+							editable: false,
+							backgroundColor: '#00BFFF'
+						});
+					}
+				}
 			}
 			callback(calendarSchedules);
 		}, eventClick: function(calEvent, jsEvent, view) {
 			$("#modalOpenBtn").click();
-			console.log('Event: ', calEvent);
+			// console.log('Event: ', calEvent);
 			selected_task = calEvent;
-			console.log('Coordinates: ' + jsEvent.pageX + ',' + jsEvent.pageY);
-			console.log('View: ' + view.name);
-			// change the border color just for fun
 			$(this).css('border-color', 'red');
 		}
 	});
 	// calendar.next();
 
 	$("#taskUndone").click(function(e) {
-		console.log("Task: ", selected_task, " is marked as undone!");
+		let data = {
+			id: selected_task.id,
+			done: false
+		};
+		console.log("Sending data: ", data);
+		$.ajax({
+			url: SERVER_URL.concat("/taskscheduler/reportundonetaskasperschedule"),
+			contentType: "application/x-www-form-urlencoded",
+			type: "POST",
+			headers: {
+				"X-CSRFToken": getCookie('csrftoken')
+			},
+			data: data,
+			dataType: 'json',
+			success: function (data) {
+				if (data.error) {
+					console.log("Error: ", data.error);
+					/*$("#snackbarMessage").text(data.error);
+					$("#snackbarMessage").addClass("show");
+					setTimeout(function(){
+						$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
+					}, 3000);*/
+				} else {
+					if (!data.success || data.success == "False" || data.success == "false") {
+						console.log("Unsuccessful: ", data.msg);
+					} else {
+						console.log(data.msg);
+						// location.reload();
+					}
+				}
+			}
+		});
+	});
+	$("#prepareSchedule").click(function(e) {
+		$.ajax({
+			url: SERVER_URL.concat("/taskscheduler/prepareschedule"),
+			contentType: "application/x-www-form-urlencoded",
+			type: "GET",
+			headers: {
+				"X-CSRFToken": getCookie('csrftoken')
+			},
+			data: [],
+			dataType: 'json',
+			success: function (data) {
+				if (data.error) {
+					$("#snackbarMessage").text(data.error);
+					$("#snackbarMessage").addClass("show");
+					setTimeout(function(){
+						$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
+					}, 3000);
+				} else {
+					location.reload();
+				}
+			}
+		});
 	});
 });

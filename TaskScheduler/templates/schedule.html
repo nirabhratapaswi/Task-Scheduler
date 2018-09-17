@@ -47,6 +47,53 @@
 	ul > li > a {
 		color: #FFFF33;
 	}
+
+	/* The snackbar - position it at the bottom and in the middle of the screen */
+	#snackbarMessage {
+	    visibility: hidden; /* Hidden by default. Visible on click */
+	    min-width: 250px; /* Set a default minimum width */
+	    margin-left: -125px; /* Divide value of min-width by 2 */
+	    background-color: #333; /* Black background color */
+	    color: #fff; /* White text color */
+	    text-align: center; /* Centered text */
+	    border-radius: 2px; /* Rounded borders */
+	    padding: 16px; /* Padding */
+	    position: fixed; /* Sit on top of the screen */
+	    z-index: 1; /* Add a z-index if needed */
+	    left: 50%; /* Center the snackbar */
+	    bottom: 30px; /* 30px from the bottom */
+	}
+
+	/* Show the snackbar when clicking on a button (class added with JavaScript) */
+	#snackbarMessage.show {
+	    visibility: visible; /* Show the snackbar */
+	    /* Add animation: Take 0.5 seconds to fade in and out the snackbar. 
+	   However, delay the fade out process for 2.5 seconds */
+	   -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+	   animation: fadein 0.5s, fadeout 0.5s 2.5s;
+	}
+	/* The snackbar - position it at the bottom and in the middle of the screen */
+
+	/* Animations to fade the snackbar in and out */
+	@-webkit-keyframes fadein {
+	    from {bottom: 0; opacity: 0;} 
+	    to {bottom: 30px; opacity: 1;}
+	}
+
+	@keyframes fadein {
+	    from {bottom: 0; opacity: 0;}
+	    to {bottom: 30px; opacity: 1;}
+	}
+
+	@-webkit-keyframes fadeout {
+	    from {bottom: 30px; opacity: 1;} 
+	    to {bottom: 0; opacity: 0;}
+	}
+
+	@keyframes fadeout {
+	    from {bottom: 30px; opacity: 1;}
+	    to {bottom: 0; opacity: 0;}
+	}
 </style>
 
 <!-- <nav class="navbar navbar-expand-sm bg-dark navbar-dark"> -->
@@ -83,31 +130,54 @@
 
 <!-- Trigger the modal with a button -->
 <button id="modalOpenBtn" type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#confirmModal" style="display: none;">Open Modal</button>
+
 <!-- Modal -->
-<div class="modal fade" id="confirmModal" role="dialog">
+<div id="confirmModal" class="modal fade" role="dialog">
 	<div class="modal-dialog">
 		<!-- Modal content-->
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal">&times;</button><br>
-				<!-- <h4 class="modal-title">Mark Task as Undone</h4> -->
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
 			</div>
 			<div class="modal-body">
-				<p>All tasks in schedule before current time is considered done, in case you missed some task, mark it as undone so that we can reschedule it for you and you don't miss your deadline:)</p>
+				<p>Tasks in the past are assumed to be completed as per schedule, in order to mark it as undone, click the button below, so that we can re-schedule it and make sure you don't miss your deadline.</p>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" id="taskUndone" data-dismiss="modal">Mark as Undone?</button>
+				<button id="taskUndone" type="button" class="btn btn-default" data-dismiss="modal">Mark as Undone</button>
 				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 			</div>
-		</div>  
+		</div>
 	</div>
 </div>
 
+<div>
+	<div class="row text-center">
+		<div class="col-sm-2" style="margin-left: 30%;">
+			<label for="prepareSchedule">Click to Calculate Schedule starting now: </label>
+		</div>
+		<div class="col-sm-2">
+			<button id="prepareSchedule" type="button" class="btn btn-info btn-lg">Re-Schedule</button>
+		</div>
+	</div>
+	<br>
+	<div class="row">
+		<div  style="margin-left: 5%;" id="calendar" style="height: 800px;"></div>
+	</div>
+</div>
+
+<!-- Snackbars -->
+<div id="snackbarMessage"></div>
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+
+{% load static %}
 <script type="text/javascript">
 	var schedule = new Array();
+	var SERVER_URL = "{{ SERVER_URL }}";
+	console.log("SERVER_URL: ", SERVER_URL);
 	let i = 0;
 	{% for s in schedule %}
-		console.log("Schedule "+(i++).toString()+": ", "{{ s }}");
+		// console.log("Schedule "+(i++).toString()+": ", "{{ s }}");
 		schedule.push({
 			id: "{{ s.id }}",
 			task_name: "{{ s.task.name }}",
@@ -118,15 +188,6 @@
 		});
 	{% endfor %}
 </script>
-
-<div id="calendar" style="height: 800px;"></div>
-
-<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
-
-{% load static %}
-<!-- <script src="{% static  "js/tui-code-snippet.js" %}" type="text/javascript"></script>
-<script src="{% static  "js/tui-calendar.js" %}" type="text/javascript"></script>
-<link rel="stylesheet" type="text/css" href="{% static  "css/tui-calendar.css" %}" /> -->
 <link rel="stylesheet" href="{% static  "fullcalendar-3.9.0/fullcalendar.css" %}" />
 <script src="{% static  "js/jquery.js" %}" type="text/javascript"></script>
 <script src="{% static  "js/moment.js" %}" type="text/javascript"></script>

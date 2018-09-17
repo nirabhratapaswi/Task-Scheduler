@@ -5,7 +5,8 @@ from . import views
 app_name = 'taskscheduler'
 urlpatterns = [
     # path('', views.prioritySchedule, name='prioritySchedule'),
-    path('schedule', views.schedule, name='schedule'),
+    path('schedule', views.viewSchedule, name='schedule'),
+    path('prepareschedule', views.prepareSchedule, name='prepareschedule'),
     path('createtask', views.createTask, name='createtask'),
     path('tasklist', views.getTasks, name='tasklist'),
     path('deletetask', views.deleteTask, name='deletetask'),
@@ -15,4 +16,5 @@ urlpatterns = [
     path('createweeklyschedule', views.createWeeklySchedule, name='createweeklyschedule'),
     path('weeklyschedulelist', views.getWeeklySchedule, name='weeklyschedulelist'),
     path('deleteweeklyschedule', views.deleteWeeklySchedule, name='deleteweeklyschedule'),
+    path('reportundonetaskasperschedule', views.reportUndoneTaskAsPerSchedule, name='reportundonetaskasperschedule'),
 ]

@@ -10,6 +10,13 @@ from . import schedulerAlgorithms as scAlgo
 from . import forms as Forms
 from django.utils.dateparse import parse_date
 import json
+import os
+
+SERVER_URL = "http://127.0.0.1:8000"
+if os.environ.get("SERVER_URL"):
+	SERVER_URL = str(os.environ["SERVER_URL"])
+
+print("SERVER_URL: " + SERVER_URL)
 
 calcutta = pytz.timezone("Asia/Calcutta")
 
@@ -17,6 +24,11 @@ def convertToDateTime(date_string, time_string, *args):
 	date = datetime.datetime.strptime(date_string, "%m/%d/%Y").date()
 	time = datetime.datetime.strptime(time_string+":00.00000", "%H:%M:%S.%f").time()
 	return datetime.datetime.combine(date, time).replace(tzinfo=pytz.UTC)
+
+def getLocalTime(current_time_utc, *args):
+	tz = pytz.UTC
+	current_time_regional = SRRS.roundToNearestHour(tz.normalize(tz.localize((current_time_utc).replace(tzinfo=None))).astimezone(pytz.timezone("Asia/Calcutta")).replace(tzinfo=pytz.UTC))
+	return current_time_regional
 
 # Create your views here.
 def prioritySchedule(request):
@@ -42,34 +54,56 @@ def prioritySchedule(request):
 	return HttpResponse(response)
 	# return render(request, 'schedule.html', {'schedule': schedule})
 
-def schedule(request):
-	# for s in Schedule.objects.all():	# remove this after testing
-	# 	s.delete()
-
-	tz = pytz.UTC
+def reportUndoneTaskAsPerSchedule(request):
 	current_time_utc = timezone.now()
-	current_time_regional = SRRS.roundToNearestHour(tz.normalize(tz.localize((current_time_utc).replace(tzinfo=None))).astimezone(pytz.timezone("Asia/Calcutta")).replace(tzinfo=pytz.UTC))
-	# current_time_regional += timezone.timedelta(minutes=300)
-	# current_time = SRRS.roundToNearestHour(current_time.replace(tzinfo=pytz.UTC))
-	print("Current Time: " + str(current_time_regional))
-	schedules_till_now = crud.readPastSchedulesAsList(current_time_regional)
-	print("Past Schedules: " + str(len(schedules_till_now)))
-	for s in schedules_till_now:
-		print("Past Schedule name: " + s.task.name)
-	schedule = list()
-	max_end_time = current_time_regional
-	for t in Task.objects.all():
+	current_time_regional = getLocalTime(current_time_utc)	# + timezone.timedelta(minutes=360)
+	if request.method == "POST":
+		if request.POST["id"]:
+			[success, error] = crud.updateScheduleStatus(request.POST["id"], current_time_regional, False)
+			if success:
+				return HttpResponse(json.dumps({"success": success, "msg": "Task maked as undone in timeline!"}), content_type="application/json")
+			else:
+				return HttpResponse(json.dumps({"success": success, "msg": error}), content_type="application/json")
+		else:
+			return HttpResponse(json.dumps({"success": False, "msg": "ID not mentioned in request!"}), content_type="application/json")
+	else:
+		return HttpResponse(json.dumps({"success": False, "msg": "Get Method not Supported for this URL!"}), content_type="application/json")
+
+def viewSchedule(request):
+	schedule = crud.readSchedule()
+	return render(request, 'schedule.html', {
+		'schedule': [s for s in schedule],
+		'SERVER_URL': SERVER_URL
+	})
+
+def prepareSchedule(request):	## Vimp - current timezone is set to India's, change it to take into account actual local timezone 
+	for t in Task.objects.all():	# Added here so that reading schedule__task objects don't read old data
 		t.times_repeated_today = 0
+		t.left = t.span
 		t.save()
+
+	current_time_utc = timezone.now()
+	current_time_regional = getLocalTime(current_time_utc)
+	# current_time_regional += timezone.timedelta(minutes=720)
+	print("Current Regional Time: " + str(current_time_regional))
+	schedules_till_now = crud.readPastSchedulesAsList(current_time_regional)
+	# print("Past Schedules: " + str(len(schedules_till_now)))
+	# for s in schedules_till_now:
+	# 	print("Past Schedule name: " + s.task.name)
+	max_end_time = current_time_regional
 	for s in schedules_till_now:
 		max_end_time = max(max_end_time, s.end_time)
-		s.task.left -= (s.end_time - s.start_time).total_seconds()/60
-		if s.task.left == 0:
-			s.task.done = True
-		if s.end_time.weekday() == current_time_regional.weekday():
-			s.task.times_repeated_today += 1
-		s.task.save()
-		schedule.append(s)
+		if s.task.done:
+			s.task.left = 0
+			s.task.save()
+			continue
+		if s.done:
+			s.task.left -= (s.end_time - s.start_time).total_seconds()/60
+			if s.task.left <= 0:
+				s.task.done = True
+			if s.end_time.weekday() == current_time_regional.weekday():
+				s.task.times_repeated_today += 1
+			s.task.save()
 
 	current_time_regional = max(max_end_time, current_time_regional)
 	tasks = crud.readUndoneTasks()
@@ -82,28 +116,14 @@ def schedule(request):
 	for b in blocked:
 		blockedList.append(b)
 
-	# current_time_regional = pytz.timezone("Asia/Calcutta").localize(current_time_regional.replace(tzinfo=None))
-	for s in schedule:
-		print("Task name: " + s.task.name + ", time left: " + str(s.task.left))
-	schedule = SRRS.scheduleTasks(taskList, current_time_regional, blockedList, weekly_schedule, schedule)
+	schedule = SRRS.scheduleTasks(taskList, current_time_regional, blockedList, weekly_schedule)
 
 	print("Schedule: ")
 	for s in schedule:
 		print("Task name: " + s.task.name + ", start: " + str(s.start_time) + ", end: " + str(s.end_time))
-		if s.start_time >= current_time_regional:
-			print("Saving schedule: " + s.task.name)
-			s.save()
+		s.save()
 
-	# index = 0
-	# for s in schedule:
-	# 	s.start_time = s.start_time.isoformat()
-	# 	s.end_time = s.end_time.isoformat()
-	# 	schedule[index] = s
-	# 	index += 1
-
-	full_schedule = Schedule.objects.all()
-
-	return render(request, 'schedule.html', {'schedule': [s for s in full_schedule]})
+	return HttpResponse(json.dumps({"success": True, "msg": "Schedule Created Successfully!"}), content_type="application/json")
 
 def createTask(request):
 	if request.method == "POST":
@@ -132,12 +152,18 @@ def createTask(request):
 		else:
 			return HttpResponse(json.dumps({"error": error}), content_type="application/json")
 	else:
-		return render(request, 'createTask.html', {'form': Forms.TaskForm})
+		return render(request, 'createTask.html', {
+			'form': Forms.TaskForm,
+			'SERVER_URL': SERVER_URL
+		})
 
 def getTasks(request):
 	# if this is a POST request we need to process the form data
 	tasks = crud.readAllTasks()
-	return render(request, 'taskList.html', {'tasks': tasks})
+	return render(request, 'taskList.html', {
+		'tasks': tasks,
+		'SERVER_URL': SERVER_URL
+	})
 
 def deleteTask(request):
 	# if this is a POST request we need to process the form data
@@ -183,12 +209,18 @@ def createBlocked(request):
 		else:
 			return HttpResponse(json.dumps({"error": error}), content_type="application/json")
 	else:
-		return render(request, "createBlocked.html", {'form': Forms.BlockedForm})
+		return render(request, "createBlocked.html", {
+			'form': Forms.BlockedForm,
+			'SERVER_URL': SERVER_URL
+		})
 
 def getBlocked(request):
 	# if this is a POST request we need to process the form data
 	blocked = crud.readBlocked()
-	return render(request, 'blockedList.html', {'blocked': blocked})
+	return render(request, 'blockedList.html', {
+		'blocked': blocked,
+		'SERVER_URL': SERVER_URL
+	})
 
 def deleteBlocked(request):
 	# if this is a POST request we need to process the form data
@@ -236,12 +268,18 @@ def createWeeklySchedule(request):
 		else:
 			return HttpResponse(json.dumps({"error": error}), content_type="application/json")
 	else:
-		return render(request, "createWeeklySchedule.html", {'form': Forms.WeeklyScheduleForm})
+		return render(request, "createWeeklySchedule.html", {
+			'form': Forms.WeeklyScheduleForm,
+			'SERVER_URL': SERVER_URL
+		})
 
 def getWeeklySchedule(request):
 	# if this is a POST request we need to process the form data
 	weekly_schedule = crud.readWeeklySchedule()
-	return render(request, 'weeklyScheduleList.html', {'weekly_schedule': weekly_schedule})
+	return render(request, 'weeklyScheduleList.html', {
+		'weekly_schedule': weekly_schedule,
+		'SERVER_URL': SERVER_URL
+	})
 
 def deleteWeeklySchedule(request):
 	# if this is a POST request we need to process the form data

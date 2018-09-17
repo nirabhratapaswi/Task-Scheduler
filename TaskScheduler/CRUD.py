@@ -183,6 +183,25 @@ def getWeeklySchedulePerDayAsList(*args):
 	return weekly_schedule
 
 # Scheduling CRUDs
+def updateScheduleStatus(schedule_id, current_time, done_status, **kwargs):
+	try:
+		schedule = Schedule.objects.filter(pk=schedule_id).filter(start_time__lte=current_time)
+		if len(schedule) == 0:
+			return [False, "Task in the Future cannot be marked as undone!"]
+		else:
+			for s in schedule:
+				s.done = done_status
+				s.save()
+			return [True, None]
+	except Exception as e:
+		return [False, str(e.message)+str(type(e))]
+
+def readSchedule(*args):
+	schedule = list()
+	for s in Schedule.objects.all():
+		schedule.append(s)
+	return schedule
+
 def readPastSchedulesAsList(current_time, *args):
 	schedule = list()
 	for s in Schedule.objects.filter(start_time__lte=current_time):
