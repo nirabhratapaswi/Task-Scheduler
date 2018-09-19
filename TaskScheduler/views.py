@@ -12,7 +12,7 @@ from django.utils.dateparse import parse_date
 import json
 import os
 
-SERVER_URL = "http://127.0.0.1:8000"
+SERVER_URL = "http://localhost:8000"
 if os.environ.get("SERVER_URL"):
 	SERVER_URL = str(os.environ["SERVER_URL"])
 
@@ -84,7 +84,7 @@ def prepareSchedule(request):	## Vimp - current timezone is set to India's, chan
 
 	current_time_utc = timezone.now()
 	current_time_regional = getLocalTime(current_time_utc)
-	# current_time_regional += timezone.timedelta(minutes=720)
+	# current_time_regional -= timezone.timedelta(minutes=720)
 	print("Current Regional Time: " + str(current_time_regional))
 	schedules_till_now = crud.readPastSchedulesAsList(current_time_regional)
 	# print("Past Schedules: " + str(len(schedules_till_now)))
@@ -147,7 +147,9 @@ def createTask(request):
 			[success, error] = crud.createTask(name=data["name"], priority=data["priority"], span=data["span"], deadline=data["deadline"], at_a_stretch=data["at_a_stretch"], done=False, max_repeats_per_day=data["max_repeats_per_day"], times_repeated_today=data["times_repeated_today"], break_needed_afterwards=data["break_needed_afterwards"], id=data["id"])
 		else:
 			[success, error] = crud.createTask(name=data["name"], priority=data["priority"], span=data["span"], deadline=data["deadline"], at_a_stretch=data["at_a_stretch"], done=False, max_repeats_per_day=data["max_repeats_per_day"], times_repeated_today=data["times_repeated_today"], break_needed_afterwards=data["break_needed_afterwards"])
-		if success:
+		if success and "id" in request.POST:
+			return HttpResponse(json.dumps({"msg": "Task Updated Successfully."}), content_type="application/json")
+		elif success:
 			return HttpResponse(json.dumps({"msg": "Task Created Successfully."}), content_type="application/json")
 		else:
 			return HttpResponse(json.dumps({"error": error}), content_type="application/json")

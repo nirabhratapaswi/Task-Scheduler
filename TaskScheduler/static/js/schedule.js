@@ -1,5 +1,5 @@
 var calendar;
-var selected_task;
+var selected_task, selected_event;
 
 function getCookie(name) {
 	var cookieValue = null;
@@ -42,7 +42,7 @@ $(function() {
 			let time_now = new Date();
 			let today = (new Date(time_now.setMinutes(time_now.getMinutes() - time_now.getTimezoneOffset()))).toISOString();	// To convert local time now to UTC numeric-similar time(not equivalent)
 			for (let x in schedule) {
-				if (x.done == "true" || x.done == "True" || x.done == 1 || x.done == "1"){
+				if (schedule[x].done == "false" || schedule[x].done == "False" || schedule[x].done === 0 || schedule[x].done == "0"){
 					calendarSchedules.push({
 						id: schedule[x].id,
 						title: schedule[x].task_name,
@@ -78,12 +78,14 @@ $(function() {
 			$("#modalOpenBtn").click();
 			// console.log('Event: ', calEvent);
 			selected_task = calEvent;
+			selected_event = $(this);
 			$(this).css('border-color', 'red');
 		}
 	});
 	// calendar.next();
 
 	$("#taskUndone").click(function(e) {
+		console.log($(this));
 		let data = {
 			id: selected_task.id,
 			done: false
@@ -101,19 +103,21 @@ $(function() {
 			success: function (data) {
 				if (data.error) {
 					console.log("Error: ", data.error);
-					/*$("#snackbarMessage").text(data.error);
-					$("#snackbarMessage").addClass("show");
-					setTimeout(function(){
-						$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
-					}, 3000);*/
+					$("#snackbarMessage").text(data.error);
 				} else {
 					if (!data.success || data.success == "False" || data.success == "false") {
-						console.log("Unsuccessful: ", data.msg);
+						$("#snackbarMessage").text(data.msg);
 					} else {
 						console.log(data.msg);
+						$("#snackbarMessage").text(data.msg);
+						selected_event.css("backgroundColor", "#DC143C");
 						// location.reload();
 					}
 				}
+				$("#snackbarMessage").addClass("show");
+				setTimeout(function() {
+					$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
+				}, 3000);
 			}
 		});
 	});
@@ -131,7 +135,7 @@ $(function() {
 				if (data.error) {
 					$("#snackbarMessage").text(data.error);
 					$("#snackbarMessage").addClass("show");
-					setTimeout(function(){
+					setTimeout(function() {
 						$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
 					}, 3000);
 				} else {

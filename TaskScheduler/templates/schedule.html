@@ -184,7 +184,8 @@
 			/*start_time: "{{ s.start_time }}",
 			end_time: "{{ s.end_time }}"*/
 			start_time: new Date("{{ s.start_time.isoformat }}"),
-			end_time: new Date("{{ s.end_time.isoformat }}")
+			end_time: new Date("{{ s.end_time.isoformat }}"),
+			done: "{{ s.done }}"
 		});
 	{% endfor %}
 </script>
