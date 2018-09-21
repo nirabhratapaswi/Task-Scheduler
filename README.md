@@ -3,7 +3,7 @@
 Task-Scheduler is a lightweight application built to auto-schedule your daily/weekly/monthly/yearly routine with the motto of "Time Management? -> piece of cake".
 
   - built with **django** and **mysql**
-  - no external dependencies
+  - FullCalendar.js
   - **Api** extensions available
   - **CLI** for terminal lovers:)
 

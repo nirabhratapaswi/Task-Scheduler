@@ -273,7 +273,7 @@
 				    		$(this).html('<input type="time" class="form-control" name="deadline_time" id="id_start_time">');
 				    	} else if (index == 4) {
 				    		$(this).html('<input type="time" class="form-control" name="deadline_time" id="id_end_time">');
-				    	} else {
+				    	} else if (index != 0 && index != 7) {
 				    		$(this).prop('contenteditable', true)
 				    	}
 				    });

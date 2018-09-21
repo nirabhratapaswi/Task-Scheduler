@@ -12,6 +12,12 @@ from django.utils.dateparse import parse_date
 import json
 import os
 
+class WeeklyScheduleTemp():
+	def __init__(self, name, start_time, end_time):
+		self.name = name
+		self.start_time = start_time
+		self.end_time = end_time
+
 SERVER_URL = "http://localhost:8000"
 if os.environ.get("SERVER_URL"):
 	SERVER_URL = str(os.environ["SERVER_URL"])
@@ -71,8 +77,34 @@ def reportUndoneTaskAsPerSchedule(request):
 
 def viewSchedule(request):
 	schedule = crud.readSchedule()
+	blocked = crud.readBlocked()
+	weekly_schedule = crud.getWeeklySchedulePerDayAsList()
+	# Logic to render weekly schedule
+	current_time = min(schedule[0].start_time, blocked[0].start_time)
+	weekly_schedule_list = list()
+	index = 0
+	schedule_length = len(schedule)
+	for s in schedule:
+		if index < schedule_length - 1:
+			current_end_time = schedule[index].end_time	# or s.end_time
+			next_start_time = schedule[index+1].start_time
+			current_day = current_end_time.weekday()
+			current_date = current_end_time.date()
+			for w in weekly_schedule[current_day]:
+				if w.weekly_schedule.hard_bound:
+					if w.weekly_schedule.start_time >= current_end_time.time() and w.weekly_schedule.end_time <= next_start_time.time():
+						weekly_schedule_list.append(WeeklyScheduleTemp(w.weekly_schedule.name, datetime.datetime.combine(current_date, w.weekly_schedule.start_time).replace(tzinfo=pytz.UTC), datetime.datetime.combine(current_date, w.weekly_schedule.end_time).replace(tzinfo=pytz.UTC)))
+				else:
+					if w.weekly_schedule.end_time <= next_start_time.time() and  (datetime.datetime.combine(current_date, w.weekly_schedule.end_time).replace(tzinfo=pytz.UTC) - current_end_time).total_seconds()/60 >= w.weekly_schedule.minimum_time_to_devote:
+						weekly_schedule_list.append(WeeklyScheduleTemp(w.weekly_schedule.name, datetime.datetime.combine(current_date, w.weekly_schedule.start_time).replace(tzinfo=pytz.UTC), datetime.datetime.combine(current_date, w.weekly_schedule.end_time).replace(tzinfo=pytz.UTC)))
+		index += 1
+	print("Weekly Schedule list:")
+	for w in weekly_schedule_list:
+		print("Name: " + w.name + ", start_time: " + str(w.start_time) + ", end_time: " + str(w.end_time))
 	return render(request, 'schedule.html', {
 		'schedule': [s for s in schedule],
+		'blocked': [b for b in blocked],
+		'weekly_schedule': weekly_schedule_list,
 		'SERVER_URL': SERVER_URL
 	})
 

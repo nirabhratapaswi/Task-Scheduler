@@ -300,7 +300,7 @@
 				    		$(this).html('<input type="text" class="form-control" name="end_time_date" id="id_end_time_date"><input type="time" class="form-control" name="end_time_time" id="id_end_time_time">');
 				    		$("#id_end_time_date").datepicker();
 							$("#id_end_time_date").datepicker("option", "showAnim", "slideDown");
-				    	} else {
+				    	} else if (index != 0 && index != 5) {
 				    		$(this).prop('contenteditable', true)
 				    	}
 				    });

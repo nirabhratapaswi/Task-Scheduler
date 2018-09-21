@@ -78,16 +78,16 @@ def deleteBlockedByName(name, *args):
 def createWeeklySchedule(name, start_time, end_time, days_repeated, minimum_time_to_devote, hard_bound, **kwargs):	# check if slot is already booked!
 	try:
 		if "id" in kwargs:
-			if hard_bound:
-				blocked_tasks = Blocked.objects.all()
-				blocked_tasks_list = list()
-				for b in blocked_tasks:
-					if b.start_time.time() < end_time and b.end_time.time() > start_time:
-						blocked_tasks_list.append(b)
-				# weekly_schedule_tasks = WeeklySchedule.objects.filter(hard_bound=True).filter(end_time__gt=start_time).filter(start_time__lt=end_time)
-				weekly_schedule_tasks = DaysRepeated.objects.filter(day_index__in=days_repeated).filter(weekly_schedule__hard_bound=True).filter(weekly_schedule__end_time__gt=start_time).filter(weekly_schedule__start_time__lt=end_time)
-				if len(blocked_tasks_list) > 0 or len(weekly_schedule_tasks) > 0:
-					return [False, "Time is already blocked by some other task -- check blocked tasks or hard bound weekly schedule"]
+			# if hard_bound:
+			blocked_tasks = Blocked.objects.all()
+			blocked_tasks_list = list()
+			for b in blocked_tasks:
+				if b.start_time.time() < end_time and b.end_time.time() > start_time:
+					blocked_tasks_list.append(b)
+			# weekly_schedule_tasks = WeeklySchedule.objects.filter(hard_bound=True).filter(end_time__gt=start_time).filter(start_time__lt=end_time)
+			weekly_schedule_tasks = DaysRepeated.objects.filter(day_index__in=days_repeated).filter(weekly_schedule__hard_bound=True).filter(weekly_schedule__end_time__gt=start_time).filter(weekly_schedule__start_time__lt=end_time)
+			if len(blocked_tasks_list) > 0 or len(weekly_schedule_tasks) > 0:
+				return [False, "Time is already blocked by some other task -- check blocked tasks or hard bound weekly schedule"]
 			weekly_schedule = WeeklySchedule.objects.get(pk=kwargs["id"])
 			weekly_schedule.name = name
 			weekly_schedule.start_time = start_time
@@ -96,16 +96,16 @@ def createWeeklySchedule(name, start_time, end_time, days_repeated, minimum_time
 			weekly_schedule.hard_bound = hard_bound
 			weekly_schedule.save()
 		else:
-			if hard_bound:
-				blocked_tasks = Blocked.objects.all()
-				blocked_tasks_list = list()
-				for b in blocked_tasks:
-					if b.start_time.time() < end_time and b.end_time.time() > start_time:
-						blocked_tasks_list.append(b)
-				# weekly_schedule_tasks = WeeklySchedule.objects.filter(hard_bound=True).filter(end_time__gt=start_time).filter(start_time__lt=end_time)
-				weekly_schedule_tasks = DaysRepeated.objects.filter(day_index__in=days_repeated).filter(weekly_schedule__hard_bound=True).filter(weekly_schedule__end_time__gt=start_time).filter(weekly_schedule__start_time__lt=end_time)
-				if len(blocked_tasks_list) > 0 or len(weekly_schedule_tasks) > 0:
-					return [False, "Time is already blocked by some other task -- check blocked tasks or hard bound weekly schedule"]
+			# if hard_bound:
+			blocked_tasks = Blocked.objects.all()
+			blocked_tasks_list = list()
+			for b in blocked_tasks:
+				if b.start_time.time() < end_time and b.end_time.time() > start_time:
+					blocked_tasks_list.append(b)
+			# weekly_schedule_tasks = WeeklySchedule.objects.filter(hard_bound=True).filter(end_time__gt=start_time).filter(start_time__lt=end_time)
+			weekly_schedule_tasks = DaysRepeated.objects.filter(day_index__in=days_repeated).filter(weekly_schedule__hard_bound=True).filter(weekly_schedule__end_time__gt=start_time).filter(weekly_schedule__start_time__lt=end_time)
+			if len(blocked_tasks_list) > 0 or len(weekly_schedule_tasks) > 0:
+				return [False, "Time is already blocked by some other task -- check blocked tasks or hard bound weekly schedule"]
 			weekly_schedule = WeeklySchedule(name=name, start_time=start_time, end_time=end_time, minimum_time_to_devote=minimum_time_to_devote, hard_bound=hard_bound)
 			weekly_schedule.save()
 			for d in days_repeated:

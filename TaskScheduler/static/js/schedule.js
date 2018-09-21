@@ -48,6 +48,7 @@ $(function() {
 						title: schedule[x].task_name,
 						start: schedule[x].start_time.toISOString(),
 						end: schedule[x].end_time.toISOString(),
+						type: schedule[x].type,
 						editable: false,
 						backgroundColor: '#DC143C'
 					});
@@ -58,6 +59,7 @@ $(function() {
 							title: schedule[x].task_name,
 							start: schedule[x].start_time.toISOString(),
 							end: schedule[x].end_time.toISOString(),
+							type: schedule[x].type,
 							editable: false,
 							backgroundColor: '#008000'
 						});
@@ -67,14 +69,43 @@ $(function() {
 							title: schedule[x].task_name,
 							start: schedule[x].start_time.toISOString(),
 							end: schedule[x].end_time.toISOString(),
+							type: schedule[x].type,
 							editable: false,
 							backgroundColor: '#00BFFF'
 						});
 					}
 				}
 			}
+			for (let x in blocked) {
+				calendarSchedules.push({
+					title: blocked[x].name,
+					start: blocked[x].start_time.toISOString(),
+					end: blocked[x].end_time.toISOString(),
+					type: blocked[x].type,
+					editable: false,
+					backgroundColor: '#FF00FF'
+				});
+			}
+			for (let x in weekly_schedule) {
+				calendarSchedules.push({
+					title: weekly_schedule[x].name,
+					start: weekly_schedule[x].start_time.toISOString(),
+					end: weekly_schedule[x].end_time.toISOString(),
+					type: weekly_schedule[x].type,
+					editable: false,
+					backgroundColor: '#FFA500'
+				});
+			}
 			callback(calendarSchedules);
 		}, eventClick: function(calEvent, jsEvent, view) {
+			if (calEvent.type != "task") {
+				$("#snackbarMessage").text("You must select only task type event, not permanent or weekly schedule!");
+				$("#snackbarMessage").addClass("show");
+				setTimeout(function() {
+					$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
+				}, 3000);
+				return;
+			}
 			$("#modalOpenBtn").click();
 			// console.log('Event: ', calEvent);
 			selected_task = calEvent;
