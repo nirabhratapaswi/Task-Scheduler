@@ -53,7 +53,7 @@ Check for errors if any, if not then application works fine:)
 
 Continuing in shell
 ```sh
-$ python3 manage.py runserver
+$ nohup sudo SERVER_URL=http://localhost:8000 python36 manage.py runserver http://localhost:8000 &
 ```
 
 ### Using the GUI (to be updated soon)

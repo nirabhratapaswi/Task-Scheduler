@@ -191,6 +191,9 @@ def updateScheduleStatus(schedule_id, current_time, done_status, **kwargs):
 		else:
 			for s in schedule:
 				s.done = done_status
+				if not done_status:
+					s.task.done = done_status
+					s.task.save()
 				s.save()
 			return [True, None]
 	except Exception as e:
