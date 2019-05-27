@@ -25,6 +25,7 @@ class Schedule(models.Model):
 	task = models.ForeignKey(Task, on_delete=models.CASCADE)
 	start_time = models.DateTimeField(default=timezone.now()+timezone.timedelta(minutes=60))
 	end_time = models.DateTimeField(default=(timezone.now()+timezone.timedelta(minutes=10*60)))
+	done = models.BooleanField(default=True)
 
 class Blocked(models.Model):	# Specially booked time slots
 	def __str__(self):

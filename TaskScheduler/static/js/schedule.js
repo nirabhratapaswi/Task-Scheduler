@@ -1,153 +1,23 @@
-/*var Calendar = tui.Calendar; // CommonJS
 var calendar;
-window.onload = function() {
-	document.getElementById("calendar").style.width = window.innerWidth * 0.9;
+var selected_task, selected_event;
 
-	window.addEventListener("resize", function() {
-		document.getElementById("calendar").style.width = window.innerWidth * 0.9;
-	});
-
-	var calendar = new Calendar('#calendar', {
-		defaultView: 'month',
-		taskView: true,
-		template: {
-			monthGridHeader: function(model) {
-				var date = new Date(model.date);
-				var template = '<span class="tui-full-calendar-weekday-grid-date">' + date.getDate() + '</span>';
-				return template;
+function getCookie(name) {
+	var cookieValue = null;
+		if (document.cookie && document.cookie != '') {
+		var cookies = document.cookie.split(';');
+			for (var i = 0; i < cookies.length; i++) {
+			var cookie = jQuery.trim(cookies[i]);
+			// Does this cookie string begin with the name we want?
+			if (cookie.substring(0, name.length + 1) == (name + '=')) {
+				cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+				break;
 			}
-		},
-		month: {
-			daynames: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-			moreLayerSize: {
-			    height: 'auto'
-			},
-			grid: {
-			    header: {
-			        header: 34
-			    },
-			    footer: {
-			        height: 10
-			    }
-			},
-			narrowWeekend: false,
-			startDayOfWeek: 1, // monday
-			visibleWeeksCount: 6,
-			visibleScheduleCount: 100
-	    },
-	    week: {
-	        daynames: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-	        narrowWeekend: false,
-	        startDayOfWeek: 0 // monday
-	    },
-	    template: {
-		    milestone: function(schedule) {
-		        return '<span style="color:red;"><i class="fa fa-flag"></i> ' + schedule.title + '</span>';
-		    },
-		    milestoneTitle: function() {
-		        return 'Milestone';
-		    },
-		    task: function(schedule) {
-		        return '&nbsp;&nbsp;#' + schedule.title;
-		    },
-		    taskTitle: function() {
-		        return '<label><input type="checkbox" />Task</label>';
-		    },
-		    allday: function(schedule) {
-		        return schedule.title + ' <i class="fa fa-refresh"></i>';
-		    },
-		    alldayTitle: function() {
-		        return 'All Day';
-		    },
-		    time: function(schedule) {
-		        return schedule.title + ' <i class="fa fa-refresh"></i>' + schedule.start;
-		    },
-		    monthMoreTitleDate: function(date) {
-		        date = new Date(date);
-		        return tui.util.formatDate('MM-DD', date) + '(' + daynames[date.getDay()] + ')';
-		    },
-		    monthMoreClose: function() {
-		        return '<i class="fa fa-close"></i>';
-		    },
-		    monthGridHeader: function(model) {
-		        var date = new Date(model.date);
-		        var template = '<span class="tui-full-calendar-weekday-grid-date">' + date.getDate() + '</span>';
-		        var today = model.isToday ? 'TDY' : '';
-		        if (today) {
-		            template += '<span class="tui-full-calendar-weekday-grid-date-decorator">' + today + '</span>';
-		        }
-		        if (tempHolidays[date.getDate()]) {
-		            template += '<span class="tui-full-calendar-weekday-grid-date-title">' + tempHolidays[date.getDate()] + '</span>';
-		        }
-		        return template;
-		    },
-		    monthGridHeaderExceed: function(hiddenSchedules) {
-		        return '<span class="calendar-more-schedules">+' + hiddenSchedules + '</span>';
-		    },
-		    monthGridFooter: function() {
-		        return '<div class="calendar-new-schedule-button">New Schedule</div>';
-		    },
-		    monthGridFooterExceed: function(hiddenSchedules) {
-		        return '<span class="calendar-footer-more-schedules">+ See ' + hiddenSchedules + ' more events</span>';
-		    },
-		    weekDayname: function(dayname) {
-		        return '<span class="calendar-week-dayname-name">' + dayname.dayName + '</span><br><span class="calendar-week-dayname-date">' + dayname.date + '</span>';
-		    },
-		    monthDayname: function(dayname) {
-		        return '<span class="calendar-week-dayname-name">' + dayname.label + '</span>';
-		    },
-		    timegridDisplayPrimayTime: function(time) {
-		        var meridiem = time.hour < 12 ? 'am' : 'pm';
-		        return time.hour + ' ' + meridiem;
-		    },
-		    timegridDisplayTime: function(time) {
-		        return time.hour + ':' + time.minutes;
-		    }
 		}
-	});
-	// calendar.setOptions({disableDblClick: true}, true);
-	
-	let calendarSchedules = new Array();
-	let index = 0;
-	for (let x in schedule) {
-		// console.log(schedule[x]);
-		index++;
-		calendarSchedules.push({
-			id: index.toString(),
-			calendarId: '1',
-			title: schedule[x].task_name,
-			category: "time",
-			dueDateClass: "",
-			start: schedule[x].start_time.toISOString(),	//'2018-01-18T22:30:00+09:00',
-			end: schedule[x].end_time.toISOString()//'2018-01-19T02:30:00+09:00'
-		});
 	}
-	console.log(calendarSchedules);
-	calendar.createSchedules(calendarSchedules);
-}*/
-
-/*window.onload = function() {	
-	let calendarSchedules = new Array();
-	let index = 0;
-	for (let x in schedule) {
-		// console.log(schedule[x]);
-		index++;
-		calendarSchedules.push({
-			id: index.toString(),
-			calendarId: '1',
-			title: schedule[x].task_name,
-			category: "time",
-			dueDateClass: "",
-			start: schedule[x].start_time.toISOString(),	//'2018-01-18T22:30:00+09:00',
-			end: schedule[x].end_time.toISOString()//'2018-01-19T02:30:00+09:00'
-		});
-	}
-	console.log(calendarSchedules);
-}*/
-var calendar;
+	return cookieValue;
+}
 
 $(function() {
-	console.log("Document is ready");
 	document.getElementById("calendar").style.width = window.innerWidth * 0.9;
 	window.addEventListener("resize", function() {
 		document.getElementById("calendar").style.width = window.innerWidth * 0.9;
@@ -169,19 +39,140 @@ $(function() {
 			}
 		}, events: function(start, end, timezone, callback) {
 			let calendarSchedules = new Array();
-			let index = 0;
+			let time_now = new Date();
+			let today = (new Date(time_now.setMinutes(time_now.getMinutes() - time_now.getTimezoneOffset()))).toISOString();	// To convert local time now to UTC numeric-similar time(not equivalent)
 			for (let x in schedule) {
-				// console.log(schedule[x]);
-				index++;
+				if (schedule[x].done == "false" || schedule[x].done == "False" || schedule[x].done === 0 || schedule[x].done == "0"){
+					calendarSchedules.push({
+						id: schedule[x].id,
+						title: schedule[x].task_name,
+						start: schedule[x].start_time.toISOString(),
+						end: schedule[x].end_time.toISOString(),
+						type: schedule[x].type,
+						editable: false,
+						backgroundColor: '#DC143C'
+					});
+				} else {
+					if (today >= schedule[x].end_time.toISOString()) {
+						calendarSchedules.push({
+							id: schedule[x].id,
+							title: schedule[x].task_name,
+							start: schedule[x].start_time.toISOString(),
+							end: schedule[x].end_time.toISOString(),
+							type: schedule[x].type,
+							editable: false,
+							backgroundColor: '#008000'
+						});
+					} else {
+						calendarSchedules.push({
+							id: schedule[x].id,
+							title: schedule[x].task_name,
+							start: schedule[x].start_time.toISOString(),
+							end: schedule[x].end_time.toISOString(),
+							type: schedule[x].type,
+							editable: false,
+							backgroundColor: '#00BFFF'
+						});
+					}
+				}
+			}
+			for (let x in blocked) {
 				calendarSchedules.push({
-					title: schedule[x].task_name,
-					start: schedule[x].start_time.toISOString(),	//'2018-01-18T22:30:00+09:00',
-					end: schedule[x].end_time.toISOString()//'2018-01-19T02:30:00+09:00'
+					title: blocked[x].name,
+					start: blocked[x].start_time.toISOString(),
+					end: blocked[x].end_time.toISOString(),
+					type: blocked[x].type,
+					editable: false,
+					backgroundColor: '#FF00FF'
+				});
+			}
+			for (let x in weekly_schedule) {
+				calendarSchedules.push({
+					title: weekly_schedule[x].name,
+					start: weekly_schedule[x].start_time.toISOString(),
+					end: weekly_schedule[x].end_time.toISOString(),
+					type: weekly_schedule[x].type,
+					editable: false,
+					backgroundColor: '#FFA500'
 				});
 			}
 			callback(calendarSchedules);
+		}, eventClick: function(calEvent, jsEvent, view) {
+			if (calEvent.type != "task") {
+				$("#snackbarMessage").text("You must select only task type event, not permanent or weekly schedule!");
+				$("#snackbarMessage").addClass("show");
+				setTimeout(function() {
+					$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
+				}, 3000);
+				return;
+			}
+			$("#modalOpenBtn").click();
+			// console.log('Event: ', calEvent);
+			selected_task = calEvent;
+			selected_event = $(this);
+			$(this).css('border-color', 'red');
 		}
 	});
 	// calendar.next();
 
+	$("#taskUndone").click(function(e) {
+		console.log($(this));
+		let data = {
+			id: selected_task.id,
+			done: false
+		};
+		console.log("Sending data: ", data);
+		$.ajax({
+			url: SERVER_URL.concat("/taskscheduler/reportundonetaskasperschedule"),
+			contentType: "application/x-www-form-urlencoded",
+			type: "POST",
+			headers: {
+				"X-CSRFToken": getCookie('csrftoken')
+			},
+			data: data,
+			dataType: 'json',
+			success: function (data) {
+				if (data.error) {
+					console.log("Error: ", data.error);
+					$("#snackbarMessage").text(data.error);
+				} else {
+					if (!data.success || data.success == "False" || data.success == "false") {
+						$("#snackbarMessage").text(data.msg);
+					} else {
+						console.log(data.msg);
+						$("#snackbarMessage").text(data.msg);
+						selected_event.css("backgroundColor", "#DC143C");
+						// location.reload();
+					}
+				}
+				$("#snackbarMessage").addClass("show");
+				setTimeout(function() {
+					$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
+				}, 3000);
+			}
+		});
+	});
+	$("#prepareSchedule").click(function(e) {
+		$.ajax({
+			url: SERVER_URL.concat("/taskscheduler/prepareschedule"),
+			contentType: "application/x-www-form-urlencoded",
+			type: "GET",
+			headers: {
+				"X-CSRFToken": getCookie('csrftoken')
+			},
+			data: [],
+			dataType: 'json',
+			success: function (data) {
+				if (data.error) {
+					$("#snackbarMessage").text(data.error);
+					$("#snackbarMessage").addClass("show");
+					setTimeout(function() {
+						$("#snackbarMessage").removeClass("show"); $("#snackbarMessage").addClass("");
+					}, 3000);
+				} else {
+					location.reload();
+				}
+			}
+		});
+	});
 });
