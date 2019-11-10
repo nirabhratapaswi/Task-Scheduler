@@ -2,3 +2,5 @@ myapp/*.cnf
 */__pycache__
 *.pyc
 *.cnf
+pvenv
+.vscode

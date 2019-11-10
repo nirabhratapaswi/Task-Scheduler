@@ -80,7 +80,7 @@ def viewSchedule(request):
 	blocked = crud.readBlocked()
 	weekly_schedule = crud.getWeeklySchedulePerDayAsList()
 	# Logic to render weekly schedule
-	current_time = min(schedule[0].start_time, blocked[0].start_time)
+	# current_time = min(schedule[0].start_time, blocked[0].start_time)
 	weekly_schedule_list = list()
 	index = 0
 	schedule_length = len(schedule)

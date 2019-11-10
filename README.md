@@ -35,7 +35,7 @@ $ sudo mysql -u root -p
 ```
 Enter your admin password, then inside the shell
 ```sh
-> CREATE DATABASE TaskScheduler
+> CREATE DATABASE TaskScheduler;
 > CREATE USER 'your_username'@'localhost' IDENTIFIED BY 'your_password';
 > GRANT ALL PRIVILEGES ON TaskScheduler.* TO 'your_username'@'localhost';
 > GRANT ALL PRIVILEGES ON test_.* TO 'your_username'@'localhost';
