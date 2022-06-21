@@ -4,7 +4,7 @@ django-cors-headers==2.4.0
 django-debug-toolbar==1.8
 django-markdownx==2.0.21
 djangorestframework==3.7.3
-numpy==1.14.3
+numpy==1.22.0
 sqlparse==0.2.4
 prompt-toolkit==2.0.4
 terminaltables==3.1.0
